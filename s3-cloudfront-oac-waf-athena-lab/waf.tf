@@ -9,8 +9,8 @@ resource "aws_wafv2_ip_set" "blocked_ips" {
   ip_address_version = "IPV4"
 
   addresses = [
-    /* "176.147.243.147/32" # replace with real IP if needed */
-    "176.147.243.100/32"
+    #"176.147.243.147/32" 
+      "176.147.243.100/32" # replace with real IP if needed */
   ]
 }
 
@@ -84,6 +84,7 @@ resource "aws_wafv2_web_acl" "cf_waf" {
 
   ############################################
   # ✅ AWS Managed Rules
+  # 👉 This includes internal rules like: CrossSiteScripting_QUERYSTRING and CrossSiteScripting_BODY
   ############################################
   rule {
     name     = "AWSManagedCommonRules"
