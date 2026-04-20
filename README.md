@@ -1,6 +1,6 @@
 # 🔐 AWS Secure CDN with Automated WAF Protection
 
-> Cloud-native security pipeline using CloudFront, WAF, Lambda, Athena, and Terraform
+> Cloud-native security pipeline using CloudFront, WAF, Lambda, DynamoDB, SNS, Athena, and Terraform
 
 ---
 
@@ -11,7 +11,8 @@
 ![WAF](https://img.shields.io/badge/Security-WAF-red)
 ![Lambda](https://img.shields.io/badge/Compute-Lambda-yellow)
 ![Athena](https://img.shields.io/badge/Analytics-Athena-purple)
-![Glue](https://img.shields.io/badge/ETL-Glue-blueviolet)
+![DynamoDB](https://img.shields.io/badge/Database-DynamoDB-green)
+![SNS](https://img.shields.io/badge/Notifications-SNS-orange)
 
 ---
 
@@ -21,43 +22,50 @@
 flowchart TD
     A[User / Internet] --> B[CloudFront CDN]
     B -->|OAC| C[S3 Static Website]
-    B --> D[WAF Protection]
+    B --> D[AWS WAF Protection]
     B --> E[CloudFront Logs]
     E --> F[S3 Log Bucket]
-    F --> G[Lambda Auto Block]
-    G --> H[WAF IP Set]
-    F --> I[Glue Catalog]
-    I --> J[Athena Queries]
+    F --> G[Lambda Log Analyzer]
+    G --> H[WAF IP Set Update]
+    G --> I[DynamoDB - IP Tracking]
+    G --> J[SNS Alert Notification]
+    F --> K[Glue Catalog]
+    K --> L[Athena Queries]
 ```
 
 ---
 
 ## 🚀 Key Features
 
-- Secure S3 origin using CloudFront OAC
-- AWS WAF with managed + custom rules
-- Automated IP blocking via Lambda
+- Secure S3 origin using CloudFront Origin Access Control (OAC)
+- AWS WAF protection with managed + custom rules
+- Automated IP detection and blocking via Lambda
+- Persistent attack tracking using DynamoDB
+- Real-time security alerts via SNS notifications
 - Log analytics using Glue + Athena
-- Fully automated with Terraform
+- Fully automated infrastructure using Terraform
+
+---
+
+## 🛡️ Security Note
+
+AWS Shield Standard protection is implicitly enabled for CloudFront and provides automatic baseline DDoS protection without additional configuration.
+
+This architecture builds on top of AWS Shield Standard by adding:
+- Layer 7 threat detection (WAF rules)
+- Custom IP reputation blocking
+- Automated response (Lambda + SNS + DynamoDB)
 
 ---
 
 ## 🎯 Use Case
 
-Simulates a real-world DevSecOps pipeline:
-- Detect malicious traffic
-- Analyze logs
-- Automatically block attackers
-
----
-
-## 🧠 Skills Demonstrated
-
-- Terraform (IaC)
-- AWS Security (WAF, IAM, OAC)
-- Event-driven architecture
-- Log analytics (Athena, Glue)
-- Automation (Lambda)
+- Detect malicious traffic from CloudFront logs
+- Analyze request patterns using Lambda
+- Store suspicious IPs in DynamoDB
+- Block abusive IPs via AWS WAF
+- Send real-time alerts via SNS
+- Enable forensic analysis using Athena
 
 ---
 
@@ -74,12 +82,12 @@ terraform apply
 
 ### XSS Test
 ```bash
-curl -G --data-urlencode "q=<script>alert(1)</script>" https://<url>
+curl -G --data-urlencode "q=<script>alert(1)</script>" https://<your-cloudfront-url>
 ```
 
 ### SQLi Test
 ```bash
-curl -G --data-urlencode "id=1 OR 1=1" https://<url>
+curl -G --data-urlencode "id=1 OR 1=1" https://<your-cloudfront-url>
 ```
 
 ---

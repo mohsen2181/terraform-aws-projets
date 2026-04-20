@@ -10,7 +10,7 @@ resource "aws_wafv2_ip_set" "blocked_ips" {
 
   addresses = [
     #"176.147.243.147/32" 
-      "176.147.243.100/32" # replace with real IP if needed */
+    "176.147.243.100/32" # replace with real IP if needed */
   ]
 }
 

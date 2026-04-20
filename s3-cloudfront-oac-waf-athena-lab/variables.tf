@@ -5,3 +5,8 @@ variable "region" {
 variable "bucket_name" {
   default = "tf-oac-demo-bucket-12345"
 }
+
+variable "alert_email" {
+  description = "Email address for SNS alerts"
+  type        = string
+}

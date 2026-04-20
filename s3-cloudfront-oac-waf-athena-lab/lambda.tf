@@ -17,7 +17,7 @@ resource "aws_iam_role" "lambda_role" {
 }
 
 ############################################
-# IAM Policy for WAF + Logs + S3
+# IAM Policy for WAF + Logs + S3 + SNS + DDB
 ############################################
 resource "aws_iam_role_policy" "lambda_policy" {
   name = "waf-auto-block-policy"
@@ -27,7 +27,6 @@ resource "aws_iam_role_policy" "lambda_policy" {
     Version = "2012-10-17"
     Statement = [
 
-      # WAF permissions
       {
         Effect = "Allow"
         Action = [
@@ -37,7 +36,6 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Resource = "*"
       },
 
-      # Read logs from S3
       {
         Effect = "Allow"
         Action = [
@@ -46,7 +44,6 @@ resource "aws_iam_role_policy" "lambda_policy" {
         Resource = "${aws_s3_bucket.logs.arn}/*"
       },
 
-      # CloudWatch Logs
       {
         Effect = "Allow"
         Action = [
@@ -55,13 +52,29 @@ resource "aws_iam_role_policy" "lambda_policy" {
           "logs:PutLogEvents"
         ]
         Resource = "*"
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "sns:Publish"
+        ]
+        Resource = aws_sns_topic.alerts.arn
+      },
+
+      {
+        Effect = "Allow"
+        Action = [
+          "dynamodb:PutItem"
+        ]
+        Resource = aws_dynamodb_table.blocked_ips.arn
       }
     ]
   })
 }
 
 ############################################
-# Package Lambda code automatically
+# Package Lambda
 ############################################
 data "archive_file" "lambda_zip" {
   type        = "zip"
@@ -86,6 +99,9 @@ resource "aws_lambda_function" "auto_block" {
       IP_SET_ID   = aws_wafv2_ip_set.blocked_ips.id
       IP_SET_NAME = aws_wafv2_ip_set.blocked_ips.name
       REGION      = "us-east-1"
+
+      SNS_TOPIC_ARN = aws_sns_topic.alerts.arn
+      DDB_TABLE     = aws_dynamodb_table.blocked_ips.name
     }
   }
 }
