@@ -1,0 +1,28 @@
+{
+  "individualResults": [
+    {
+      "initialSchemaVersion": null,
+      "targetSchemaVersion": "1",
+      "schemaName": "",
+      "migrations": [
+        {
+          "category": "Versioned",
+          "version": "1",
+          "description": "create messages table",
+          "type": "SQL",
+          "filepath": "/home/vagrant/terraform-projects/terraform-aws-projets/secure-webapp-rds-lambda-api-gw-secret-manager/flyway/conf/../sql/V1__create_messages_table.sql",
+          "executionTime": 588
+        }
+      ],
+      "migrationsExecuted": 1,
+      "success": true,
+      "flywayVersion": "9.22.3",
+      "database": "appdb",
+      "warnings": [],
+      "timestamp": "2026-04-22T19:43:11.964958322",
+      "operation": "migrate",
+      "exception": null,
+      "licenseFailed": false
+    }
+  ]
+}

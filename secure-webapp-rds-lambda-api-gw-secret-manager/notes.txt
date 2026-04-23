@@ -1,0 +1,27 @@
+#package your Lambda
+cd lambda
+mkdir -p package
+pip3 install psycopg2-binary -t package
+cp app.py package/
+cd package
+zip -r ../function.zip .
+#Verify before deploying
+unzip -l ../function.zip
+
+api_url = "https://147h3h97q0.execute-api.us-east-1.amazonaws.com"
+rds_endpoint = "secure-db.c054a4wemjt3.us-east-1.rds.amazonaws.com"
+
+nc -zv secure-db.c054a4wemjt3.us-east-1.rds.amazonaws.com 5432
+
+
+cd ../flyway/conf
+../flyway migrate -configFiles=flyway.conf
+
+curl -X POST "https://147h3h97q0.execute-api.us-east-1.amazonaws.com/submit" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"mohsen","message":"hello from lambda"}'
+
+  sudo apt update
+sudo apt install -y postgresql-client
+
+psql -h secure-db.c054a4wemjt3.us-east-1.rds.amazonaws.com -U dbadmin -d appdb -p 5432
