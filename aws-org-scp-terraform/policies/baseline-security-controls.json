@@ -1,0 +1,75 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Sid": "DenyLeavingOrganization",
+        "Effect": "Deny",
+        "Action": [
+          "organizations:LeaveOrganization"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Sid": "DenyRootUserActions",
+        "Effect": "Deny",
+        "Action": "*",
+        "Resource": "*",
+        "Condition": {
+          "StringLike": {
+            "aws:PrincipalArn": [
+              "arn:aws:iam::*:root"
+            ]
+          }
+        }
+      },
+      {
+        "Sid": "DenyDisableCloudTrail",
+        "Effect": "Deny",
+        "Action": [
+          "cloudtrail:DeleteTrail",
+          "cloudtrail:StopLogging",
+          "cloudtrail:UpdateTrail",
+          "cloudtrail:PutEventSelectors",
+          "cloudtrail:RemoveTags"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Sid": "DenyDisableGuardDuty",
+        "Effect": "Deny",
+        "Action": [
+          "guardduty:DeleteDetector",
+          "guardduty:DeleteMembers",
+          "guardduty:DisassociateFromMasterAccount",
+          "guardduty:DisassociateMembers",
+          "guardduty:StopMonitoringMembers",
+          "guardduty:UpdateDetector"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Sid": "DenyDisableSecurityHub",
+        "Effect": "Deny",
+        "Action": [
+          "securityhub:DisableSecurityHub",
+          "securityhub:DeleteMembers",
+          "securityhub:DisassociateFromMasterAccount",
+          "securityhub:DisassociateMembers",
+          "securityhub:BatchDisableStandards"
+        ],
+        "Resource": "*"
+      },
+      {
+        "Sid": "DenyDisableAWSConfig",
+        "Effect": "Deny",
+        "Action": [
+          "config:DeleteConfigurationRecorder",
+          "config:DeleteDeliveryChannel",
+          "config:DeleteRetentionConfiguration",
+          "config:DeleteRetentionConfiguration",
+          "config:StopConfigurationRecorder"
+        ],
+        "Resource": "*"
+      }
+    ]
+  }
