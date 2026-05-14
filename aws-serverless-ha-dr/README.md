@@ -24,28 +24,52 @@
 ```mermaid
 flowchart TD
 
-       A[User Browser] --> B[S3 Static Website]
+   A[User Browser]
+
+    B[S3 Static Website]
+
+    K[Cognito User Pool]
+
+    L[JWT / IdToken]
+
+    C[api.aws-labs.click]
+
+    D[Route53 Failover Routing]
+
+    E[API Gateway<br/>eu-west-3]
+
+    F[API Gateway<br/>eu-west-2]
+
+    G[Lambda Functions<br/>eu-west-3]
+
+    H[Lambda Functions<br/>eu-west-2]
+
+    I[DynamoDB Global Table<br/>eu-west-3]
+
+    J[DynamoDB Global Table Replica<br/>eu-west-2]
+
+    A --> B
     B --> A
 
-    A --> K[Cognito User Pool]
-    K --> L[JWT / IdToken]
+    A --> K
+    K --> L
     L --> A
 
-    A -->|HTTPS + Authorization Bearer Token| C[api.aws-labs.click]
+    A -->|HTTPS + JWT Token| C
 
-    C --> D[Route53 Failover Routing]
+    C --> D
 
-    D -->|Primary Healthy| E[API Gateway eu-west-3]
-    D -->|Primary Failure| F[API Gateway eu-west-2]
+    D -->|Primary Healthy| E
+    D -->|Primary Failure| F
 
-    E -->|Validate JWT with Cognito Authorizer| K
-    F -->|Validate JWT with Cognito Authorizer| K
+    E -->|Validate JWT| K
+    F -->|Validate JWT| K
 
-    E --> G[Lambda Functions eu-west-3]
-    F --> H[Lambda Functions eu-west-2]
+    E --> G
+    F --> H
 
-    G --> I[DynamoDB Global Table eu-west-3]
-    H --> J[DynamoDB Global Table Replica eu-west-2]
+    G --> I
+    H --> J
 
     I <--> J
 ```
