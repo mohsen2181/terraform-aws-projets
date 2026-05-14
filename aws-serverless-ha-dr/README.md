@@ -24,7 +24,7 @@
 ```mermaid
 flowchart TD
 
-     A[User Browser] --> B[S3 Static Website]
+       A[User Browser] --> B[S3 Static Website]
     B --> A
 
     A --> K[Cognito User Pool]
