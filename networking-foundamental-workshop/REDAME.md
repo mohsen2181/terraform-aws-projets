@@ -2,7 +2,6 @@
 
 ## 🏷️ Badges
 
-![Terraform](https://img.shields.io/badge/IaC-Terraform-623CE4?logo=terraform)
 ![AWS](https://img.shields.io/badge/Cloud-AWS-orange?logo=amazon-aws)
 ![VPC](https://img.shields.io/badge/Networking-VPC-blue)
 ![EC2](https://img.shields.io/badge/Compute-EC2-yellow)
@@ -12,7 +11,6 @@
 ![Interface Endpoint](https://img.shields.io/badge/VPC_Endpoint-Interface-blueviolet)
 ![SSM](https://img.shields.io/badge/Management-SSM-red)
 ![IAM](https://img.shields.io/badge/Security-IAM-informational)
-![Terraform](https://img.shields.io/badge/Automation-Infrastructure_as_Code-623CE4)
 
 > Hands-on AWS networking project using Terraform to build a production-style VPC architecture with public/private subnets, NAT Gateway, Internet Gateway, EC2 instances, VPC endpoints, IAM roles, and Systems Manager connectivity.
 
