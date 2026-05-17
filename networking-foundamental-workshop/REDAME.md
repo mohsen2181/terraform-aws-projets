@@ -156,10 +156,9 @@ AZ1
 └── Private Subnet
 
 AZ2
-└── Public Subnet
-
-AZ3
+├── Private Subnet
 └── Private Subnet
+
 ```
 
 Benefits:
@@ -319,7 +318,7 @@ Rules:
 ### Inbound
 
 ```text
-All ICMP IPv4
+All ICMP IPv4 (you should avoid  this configuration in production environment)
 ```
 
 Purpose:
@@ -347,7 +346,7 @@ Rules:
 ### Inbound
 
 ```text
-Allow all traffic
+Allow all traffic (in poduction you should use explicit allow/deny)
 ```
 
 ### Outbound
@@ -599,24 +598,6 @@ This project is strongly aligned with:
 
 ---
 
-# 🚀 Future Enhancements
-
-Possible next steps:
-
-- Application Load Balancer (ALB)
-- Auto Scaling Group (ASG)
-- Bastion host architecture
-- Transit Gateway
-- VPC Peering
-- Route53 Private Hosted Zones
-- VPC Flow Logs
-- AWS Network Firewall
-- PrivateLink architecture
-- Multi-VPC design
-- Terraform modules refactoring
-
----
-
 # 🎯 Learning Outcomes
 
 By completing this project, you gain practical experience with:
@@ -629,8 +610,6 @@ By completing this project, you gain practical experience with:
 - Gateway Endpoint vs Interface Endpoint
 - Secure EC2 access with SSM
 - IAM role authentication for EC2
-- Enterprise Terraform practices
-- AWS certification preparation
 
 ---
 
