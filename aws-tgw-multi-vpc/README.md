@@ -1,7 +1,6 @@
 # 🌐 AWS Transit Gateway Multi-VPC Lab with Terraform
 
 ![AWS](https://img.shields.io/badge/Cloud-AWS-orange?logo=amazon-aws)
-![Terraform](https://img.shields.io/badge/IaC-Terraform-623CE4?logo=terraform)
 ![Transit Gateway](https://img.shields.io/badge/Networking-Transit_Gateway-blue)
 ![VPC](https://img.shields.io/badge/AWS-VPC-informational)
 ![SSM](https://img.shields.io/badge/Management-SSM-red)
@@ -473,19 +472,6 @@ This project demonstrates hands-on experience with:
 - AWS Systems Manager
 - VPC Endpoints
 - IAM Roles & Instance Profiles
-- Terraform modularization
-- Infrastructure as Code (IaC)
-
----
-
-# 🧠 Certification Alignment
-
-Relevant for:
-
-- **AWS Solutions Architect Associate (SAA-C03)**
-- **AWS Advanced Networking**
-- **Terraform Associate**
-- **Cloud Networking & Platform Engineering**
 
 ---
 

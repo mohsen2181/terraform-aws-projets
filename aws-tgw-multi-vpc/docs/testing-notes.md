@@ -2,7 +2,7 @@
 
 ## Overview
 
-This lab validates connectivity between **three VPCs** interconnected through an **AWS Transit Gateway (TGW)**.
+This lab validates connectivity between **three VPCs** (in the same region for simplicity) interconnected through an **AWS Transit Gateway (TGW)**.
 
 ### Architecture
 
@@ -58,10 +58,9 @@ transit_gateway_route_table_id = "tgw-rtb-0a653e74997977f52"
 ```
 
 ---
+# VPC Details
 
-## VPC Details
-
-### VPC A
+## VPC A
 
 ```text
 Name: tgw-lab-vpc-a
@@ -69,30 +68,30 @@ CIDR: 10.0.0.0/16
 VPC ID: vpc-0a34b3b8abb73df0a
 ```
 
-Private Subnets:
+### Public Subnets
 
-```text
-subnet-0f40075b02c4bc834
-subnet-0a57635230433a3c9
-```
+| Subnet ID | CIDR |
+|------------|------|
+| subnet-0c1666fc3bcddd5ec | 10.0.0.0/24 |
+| subnet-0fcaae8d0066baae7 | 10.0.2.0/24 |
 
-Public Subnets:
+### Private Subnets
 
-```text
-subnet-0c1666fc3bcddd5ec
-subnet-0fcaae8d0066baae7
-```
+| Subnet ID | CIDR |
+|------------|------|
+| subnet-0f40075b02c4bc834 | 10.0.1.0/24 |
+| subnet-0a57635230433a3c9 | 10.0.3.0/24 |
 
-TGW Subnets:
+### TGW Attachment Subnets
 
-```text
-subnet-03b03c4353ad37b9d
-subnet-034b484f2808afb5c
-```
+| Subnet ID | CIDR |
+|------------|------|
+| subnet-03b03c4353ad37b9d | 10.0.5.0/28 |
+| subnet-034b484f2808afb5c | 10.0.5.16/28 |
 
 ---
 
-### VPC B
+## VPC B
 
 ```text
 Name: tgw-lab-vpc-b
@@ -100,16 +99,30 @@ CIDR: 10.1.0.0/16
 VPC ID: vpc-0feced0a70c3c9171
 ```
 
-Private Subnets:
+### Public Subnets
 
-```text
-subnet-0de360c9d5c22b706
-subnet-0052b44533a8802f7
-```
+| Subnet ID | CIDR |
+|------------|------|
+| subnet-00eafc5e364c6ff93 | 10.1.0.0/24 |
+| subnet-015c3b4d906fa0d9c | 10.1.2.0/24 |
+
+### Private Subnets
+
+| Subnet ID | CIDR |
+|------------|------|
+| subnet-0de360c9d5c22b706 | 10.1.1.0/24 |
+| subnet-0052b44533a8802f7 | 10.1.3.0/24 |
+
+### TGW Attachment Subnets
+
+| Subnet ID | CIDR |
+|------------|------|
+| subnet-0b89da930613ce366 | 10.1.5.0/28 |
+| subnet-077b99fdbcb9ec99b | 10.1.5.16/28 |
 
 ---
 
-### VPC C
+## VPC C
 
 ```text
 Name: tgw-lab-vpc-c
@@ -117,13 +130,27 @@ CIDR: 10.2.0.0/16
 VPC ID: vpc-0c6f88bfc7c76629a
 ```
 
-Private Subnets:
+### Public Subnets
 
-```text
-subnet-0cd26323581ed5a0f
-subnet-035a795bcee66b547
+| Subnet ID | CIDR |
+|------------|------|
+| subnet-03607b0a1bdb4ddb0 | 10.2.0.0/24 |
+| subnet-032fa67f225f03f18 | 10.2.2.0/24 |
+
+### Private Subnets
+
+| Subnet ID | CIDR |
+|------------|------|
+| subnet-0cd26323581ed5a0f | 10.2.1.0/24 |
+| subnet-035a795bcee66b547 | 10.2.3.0/24 |
+
+### TGW Attachment Subnets
+
+| Subnet ID | CIDR |
+|------------|------|
+| subnet-0ea1dca900de07b44 | 10.2.5.0/28 |
+| subnet-093a09ae4e538cd4d | 10.2.5.16/28 |
 ```
-
 ---
 
 # Validation Steps
