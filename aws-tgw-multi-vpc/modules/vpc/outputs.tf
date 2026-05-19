@@ -1,0 +1,27 @@
+output "name" {
+  value = var.name
+}
+
+output "vpc_id" {
+  value = aws_vpc.this.id
+}
+
+output "public_subnet_ids" {
+  value = aws_subnet.public[*].id
+}
+
+output "private_subnet_ids" {
+  value = aws_subnet.private[*].id
+}
+
+output "tgw_subnet_ids" {
+  value = aws_subnet.tgw[*].id
+}
+
+output "private_route_table_ids" {
+  value = aws_route_table.private[*].id
+}
+
+output "private_security_group_id" {
+  value = aws_security_group.private.id
+}
