@@ -6,7 +6,7 @@
 ![VPN](https://img.shields.io/badge/Site--to--Site-VPN-blue)
 ![Hybrid Cloud](https://img.shields.io/badge/Architecture-Hybrid_Cloud-success)
 ![IaC](https://img.shields.io/badge/IaC-Terraform-blueviolet)
-![Linux](https://img.shields.io/badge/Linux-Amazon_Linux_2-FCC624?logo=linux)
+![Linux](https://img.shields.io/badge/Linux-Amazon_Linux_2023-FCC624?logo=linux)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Overview
@@ -19,10 +19,11 @@ This project demonstrates:
 
 - Hybrid cloud networking
 - AWS Transit Gateway VPN attachments
-- Site-to-Site VPN over IPsec
-- Simulated on-premises routing
+- Site-to-Site VPN over IPsec with Libreswan
+- Simulated on-premises routing with IP forwarding
 - Internal enterprise DNS
 - Private connectivity between AWS and on-prem resources
+- SSM Session Manager access (no SSH/bastion required)
 - Infrastructure as Code (IaC) with Terraform
 
 ---
@@ -42,21 +43,21 @@ This project demonstrates:
 └────────────────┼─────────────────────────┘
                  │
            Site-to-Site VPN
+           (IPsec / IKEv2)
                  │
                  ▼
 ┌──────────────────────────────────────────┐
-│             ON-PREMISES VPC             │
+│          ON-PREMISES VPC                 │
+│           172.16.0.0/16                  │
 │                                          │
-│  Customer Gateway VM                    │
-│  172.16.0.100                           │
-│  (VPN Router / OpenSWAN)                │
+│  Customer Gateway VM (Libreswan)         │
+│  172.16.0.100  [Public subnet]           │
 │               │                          │
-│      ┌────────┴────────┐                │
-│      │                 │                │
-│ App Server         DNS Server           │
-│ 172.16.1.100       172.16.1.200         │
-│ Internal App       example.corp DNS     │
-│                                          │
+│      ┌────────┴────────┐                 │
+│      │                 │                 │
+│ App Server         DNS Server            │
+│ 172.16.1.100       172.16.1.200          │
+│ [Private subnet]   [Private subnet]      │
 └──────────────────────────────────────────┘
 ```
 
@@ -64,330 +65,231 @@ This project demonstrates:
 
 #### AWS Cloud
 
-The AWS environment contains three isolated VPCs connected through a centralized:
+Three isolated VPCs connected through a centralized Transit Gateway:
 
-```text
-AWS Transit Gateway
-```
+| VPC   | CIDR           |
+|-------|----------------|
+| VPC A | `10.0.0.0/16`  |
+| VPC B | `10.1.0.0/16`  |
+| VPC C | `10.2.0.0/16`  |
 
-| VPC | CIDR |
-|------|------|
-| VPC A | `10.0.0.0/16` |
-| VPC B | `10.1.0.0/16` |
-| VPC C | `10.2.0.0/16` |
-
-The Transit Gateway acts as the **central routing hub**, enabling:
-
-- Inter-VPC communication
-- Connectivity to on-premises resources through VPN
+Each VPC has public, private, and dedicated TGW subnets across two Availability Zones. The Transit Gateway acts as the **central routing hub** for both inter-VPC traffic and VPN connectivity.
 
 ---
 
 #### Hybrid Connectivity
 
-The AWS cloud is connected to the simulated datacenter through:
+AWS is connected to the simulated on-premises environment via an **AWS Site-to-Site VPN** attached directly to the Transit Gateway. Two IPsec tunnels are created for redundancy:
 
-```text
-AWS Site-to-Site VPN
-```
+- **Tunnel 2** — active, carries all traffic (`10.0.0.0/8` rightsubnet)
+- **Tunnel 1** — loaded as hot standby (`auto=add`), can be brought up manually if tunnel 2 fails
 
-The VPN is attached directly to the:
-
-```text
-Transit Gateway
-```
-
-using a:
-
-```text
-Transit Gateway VPN Attachment
-```
+This asymmetric active/standby design is intentional: when both tunnels use the same `rightsubnet`, the TGW may return replies on whichever tunnel it prefers, causing asymmetric routing. Keeping one tunnel active ensures traffic is always symmetric.
 
 Traffic flow:
 
 ```text
-AWS VPC → TGW → VPN → Customer Gateway → On-Prem Network
+AWS VPC → TGW → VPN Attachment → IPsec Tunnel → Customer Gateway → On-Prem Network
 ```
 
 ---
 
 #### On-Premises Environment
 
-The on-premises network is simulated using a dedicated VPC:
+Simulated using a dedicated VPC (`172.16.0.0/16`):
 
-```text
-172.16.0.0/16
-```
-
-Components:
-
-| Component | IP Address | Purpose |
-|------------|------------|----------|
-| Customer Gateway VM | `172.16.0.100` | VPN Router / OpenSWAN |
-| App Server | `172.16.1.100` | Internal enterprise application |
-| DNS Server | `172.16.1.200` | `example.corp` DNS |
+| Component            | IP Address      | Subnet  | Purpose                            |
+|----------------------|-----------------|---------|-----------------------------------|
+| Customer Gateway VM  | `172.16.0.100`  | Public  | VPN router, IP forwarding, Libreswan |
+| App Server           | `172.16.1.100`  | Private | Internal enterprise application   |
+| DNS Server           | `172.16.1.200`  | Private | `example.corp` internal DNS       |
 
 ---
 
-## Project Goals
+## Key Design Decisions
 
-This lab simulates a real-world enterprise hybrid architecture:
+### Libreswan over OpenSwan
 
-```text
-AWS Cloud ↔ Corporate Datacenter
-```
+The project uses **Libreswan** (not OpenSwan). OpenSwan is unmaintained and unavailable on Amazon Linux 2023. Libreswan is its actively maintained successor and is the package installed via `dnf install libreswan`.
 
-Typical enterprise use cases:
+### Amazon Linux 2023 for all instances
 
-- Legacy applications hosted on-premises
-- Cloud migration strategies
-- Secure private communication between AWS and datacenter systems
-- Hybrid DNS resolution
-- Enterprise networking and routing concepts
+All instances use **Amazon Linux 2023**. AL2023 ships with the SSM agent pre-installed, uses `dnf` as its package manager, and receives longer-term security support compared to AL2.
 
----
+### `left=` vs `leftid=` in Libreswan config
 
-## On-Premises Components
+The Customer Gateway instance uses a private IP (`172.16.0.100`) on its network interface. The EIP (`15.x.x.x`) is applied externally by AWS via NAT and does not exist on any local interface.
 
-### 1. Customer Gateway (VPN Router)
+Therefore the IPsec config separates:
+- `left=172.16.0.100` — the IP the kernel binds to locally
+- `leftid=<EIP>` — the identity AWS authenticates in IKE
 
-**Role:** Simulates a physical datacenter firewall/router.
+Using `left=%defaultroute` or `left=<EIP>` causes ESP packets to be silently dropped because the kernel cannot find a matching local interface.
 
-**EC2 Instance**
+### No VTI interfaces
 
-```text
-Private IP : 172.16.0.100
-Public IP  : Elastic IP
-Subnet     : Public subnet
-```
+VTI (Virtual Tunnel Interface) mode was evaluated but rejected for this Libreswan version (4.12). Two issues were found:
+- `mark=` requires hex notation (`0x01/0xffffffff`), not integers
+- With `vti-routing=yes`, Libreswan installs xfrm policies with marks but xfrm states without them, causing a mismatch that silently drops all data packets
 
-Responsibilities:
+Plain xfrm tunnel mode with `leftsubnet`/`rightsubnet` works reliably on this version.
 
-- Terminates IPsec VPN tunnels
-- Routes traffic between AWS and on-prem
-- Runs **OpenSWAN**
-- Performs packet forwarding
+### SSM access without SSH
 
-Equivalent real-world devices:
-
-- Cisco ASA
-- Fortigate
-- Palo Alto
-- Juniper SRX
-- StrongSwan VPN Gateway
+All instances have IAM instance profiles with `AmazonSSMManagedInstanceCore`. The on-prem private instances (app server, DNS server) use **VPC Interface Endpoints** for SSM, ssmmessages, and ec2messages so SSM traffic never leaves the VPC.
 
 ---
 
-### 2. On-Premises App Server
-
-**Role:** Simulates an internal enterprise application.
-
-```text
-Private IP : 172.16.1.100
-Subnet     : Private subnet
-```
-
-Runs:
-
-```text
-Apache HTTP Server
-```
-
-Used to validate:
-
-```text
-AWS → On-Prem connectivity
-```
-
-Example test:
-
-```bash
-curl http://172.16.1.100
-```
-
-Response:
-
-```text
-Hello from On-Premises App Server
-```
-
----
-
-### 3. On-Premises DNS Server
-
-**Role:** Simulates an enterprise internal DNS server.
-
-```text
-Private IP : 172.16.1.200
-Subnet     : Private subnet
-```
-
-Configured zone:
-
-```text
-example.corp
-```
-
-Example internal resolution:
-
-```text
-myapp.example.corp
-→ 172.16.1.100
-```
-
-This mirrors common hybrid cloud DNS architectures.
-
----
-
-## Hybrid Connectivity Flow
-
-Traffic path between AWS and on-prem:
-
-```text
-EC2 (AWS VPC)
-        ↓
-Private Route Table
-        ↓
-Transit Gateway
-        ↓
-VPN Attachment
-        ↓
-IPsec Tunnel
-        ↓
-Customer Gateway
-        ↓
-On-Prem App Server
-```
-
----
-
-## Technologies Used
-
-### Cloud Networking
-
-- AWS Transit Gateway
-- AWS Site-to-Site VPN
-- AWS Customer Gateway
-- VPC Routing
-- Route Tables
-- Security Groups
-- Elastic IP
-
-### Infrastructure as Code
-
-- Terraform
-
-### Operating Systems
-
-- Amazon Linux 2
-- Amazon Linux 2023
-
-### VPN
-
-- OpenSWAN
-- IPsec
-
-### Application Services
-
-- Apache HTTP Server
-- BIND DNS
-
----
-
-## Terraform Resources Implemented
+## Terraform Resources
 
 ### Networking
 
-- `aws_customer_gateway`
-- `aws_vpn_connection`
-- `aws_ec2_transit_gateway_route`
+- `aws_vpc`, `aws_subnet`, `aws_internet_gateway`, `aws_nat_gateway`
+- `aws_route_table`, `aws_route_table_association`, `aws_route`
+- `aws_ec2_transit_gateway`, `aws_ec2_transit_gateway_route_table`
+- `aws_ec2_transit_gateway_vpc_attachment`
 - `aws_ec2_transit_gateway_route_table_association`
-- `aws_route`
-- `aws_nat_gateway`
-- `aws_internet_gateway`
+- `aws_ec2_transit_gateway_route_table_propagation`
+- `aws_ec2_transit_gateway_route`
+- `aws_customer_gateway`, `aws_vpn_connection`
 
 ### Compute
 
-- `aws_instance`
-- `aws_eip`
-- `aws_eip_association`
+- `aws_instance`, `aws_eip`, `aws_eip_association`
 
 ### Security
 
 - `aws_security_group`
+- `aws_iam_role`, `aws_iam_instance_profile`
 
 ### DNS
 
-- `aws_vpc_dhcp_options`
-- `aws_vpc_dhcp_options_association`
+- `aws_vpc_dhcp_options`, `aws_vpc_dhcp_options_association`
+
+### VPC Endpoints
+
+- `aws_vpc_endpoint` (Interface: ssm, ssmmessages, ec2messages, ec2 — for all VPCs including on-prem)
+- `aws_vpc_endpoint` (Gateway: s3 — for cloud VPCs)
+
+---
+
+## Prerequisites
+
+- Terraform v1.0+
+- AWS CLI configured with appropriate permissions
+- Your public IP address (used for the `participant_ip_address` variable)
+
+---
+
+## Deployment
+
+```bash
+git clone <repo>
+cd aws-tgw-multi-vpc-vpn-on-premise
+
+terraform init
+
+terraform apply \
+  -var="participant_ip_address=$(curl -s ifconfig.me)/32"
+```
+
+Default region is `eu-west-3` (Paris). Override with `-var="aws_region=eu-west-1"` if needed.
 
 ---
 
 ## Connectivity Validation
 
-### Verify VPN Status
+### Connect to instances via SSM
+
+```bash
+# Cloud instance
+aws ssm start-session \
+  --target <cloud-instance-id> \
+  --region eu-west-3
+
+# On-prem Customer Gateway
+aws ssm start-session \
+  --target $(terraform output -raw onprem_customer_gateway_instance_id) \
+  --region eu-west-3
+```
+
+### Verify VPN tunnel status (from CGW instance)
+
+```bash
+sudo ipsec status
+```
+
+Expected: both connections loaded, tunnel-2 in `STATE_V2_ESTABLISHED_CHILD_SA`.
+
+### Verify VPN tunnel status from AWS
 
 ```bash
 aws ec2 describe-vpn-connections \
-  --vpn-connection-ids <vpn-id> \
+  --filters "Name=tag:Name,Values=On-Premises-to-TGW-VPN" \
   --region eu-west-3 \
   --query 'VpnConnections[0].VgwTelemetry[*].[OutsideIpAddress,Status]' \
   --output table
 ```
 
-Expected:
+Expected: both tunnels `UP`.
 
-```text
-UP
-```
-
----
-
-### Verify Transit Gateway Route
+### Ping cloud instances from on-prem CGW
 
 ```bash
-aws ec2 search-transit-gateway-routes \
-  --transit-gateway-route-table-id <tgw-route-table-id> \
-  --filters Name=route-search.exact-match,Values=172.16.0.0/16 \
-  --region eu-west-3
+ping -c 4 10.0.1.x   # VPC A
+ping -c 4 10.1.1.x   # VPC B
+ping -c 4 10.2.1.x   # VPC C
 ```
 
-Expected:
-
-```text
-State: active
-Type : static
-```
-
----
-
-### Test Hybrid Connectivity
-
-Connect to a cloud EC2 instance:
+### Ping on-prem from a cloud instance
 
 ```bash
-aws ssm start-session \
-  --target <cloud-ec2-instance-id> \
-  --region eu-west-3
+ping -c 4 172.16.1.100   # On-prem app server
+ping -c 4 172.16.1.200   # On-prem DNS server
 ```
 
-Ping on-prem server:
-
-```bash
-ping 172.16.1.100 -c 4
-```
-
-HTTP validation:
+### HTTP validation
 
 ```bash
 curl http://172.16.1.100
 ```
 
-Expected output:
+Expected:
 
 ```text
 Hello from On-Premises App Server
 ```
+
+### DNS validation
+
+```bash
+dig myapp.example.corp @172.16.1.200
+```
+
+Expected: resolves to `172.16.1.100`.
+
+### Verify TGW route to on-prem
+
+```bash
+aws ec2 search-transit-gateway-routes \
+  --transit-gateway-route-table-id $(terraform output -raw transit_gateway_route_table_id) \
+  --filters Name=route-search.exact-match,Values=172.16.0.0/16 \
+  --region eu-west-3
+```
+
+Expected: `state: active`, `type: static`.
+
+---
+
+## Failover to Tunnel 1
+
+If tunnel 2 goes down, bring up the standby tunnel from the CGW instance:
+
+```bash
+sudo ipsec auto --up aws-tunnel-1
+```
+
+To make tunnel 1 the permanent active tunnel, swap `auto=start` / `auto=add` in `/etc/ipsec.conf` and restart ipsec.
 
 ---
 
@@ -395,15 +297,13 @@ Hello from On-Premises App Server
 
 This project demonstrates practical knowledge of:
 
-- Hybrid Cloud Networking
-- AWS Transit Gateway
-- Site-to-Site VPN
-- IPsec Tunnels
-- OpenSWAN Configuration
-- Enterprise Routing
-- Private Connectivity
-- Infrastructure as Code with Terraform
-- Hybrid DNS Architecture
-- Multi-network troubleshooting
-
----
+- Hybrid Cloud Networking with AWS Transit Gateway
+- Site-to-Site VPN and IPsec/IKEv2 tunnel negotiation
+- Libreswan configuration and troubleshooting
+- Asymmetric routing diagnosis and resolution
+- AWS EIP NAT behaviour and its effect on VPN local binding
+- SSM Session Manager for keyless instance access
+- VPC Interface Endpoints for private AWS service access
+- Infrastructure as Code with Terraform modules
+- Hybrid DNS architecture with BIND
+- Multi-layer network debugging (xfrm states, tcpdump, ipsec status)

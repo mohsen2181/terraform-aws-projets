@@ -121,7 +121,13 @@ resource "aws_security_group" "private" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = var.allowed_internal_cidrs
+    #cidr_blocks = var.allowed_internal_cidrs
+    cidr_blocks = [
+      "10.0.0.0/16",
+      "10.1.0.0/16",
+      "10.2.0.0/16",
+      "172.16.0.0/16"
+    ]
   }
 
   egress {

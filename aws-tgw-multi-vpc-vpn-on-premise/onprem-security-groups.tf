@@ -4,7 +4,7 @@ resource "aws_security_group" "onprem_app" {
   vpc_id      = aws_vpc.onprem.id
 
   ingress {
-    description = "HTTP from AWS private ranges"
+    description = "HTTP from private ranges"
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
@@ -112,19 +112,12 @@ resource "aws_security_group" "onprem_customer_gateway" {
     ]
   }
 
-  egress {
-    description = "Allow all outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
   ingress {
     description = "IPsec IKE from AWS tunnel 1"
     from_port   = 500
     to_port     = 500
     protocol    = "udp"
-    cidr_blocks = ["13.38.212.82/32"]
+    cidr_blocks = ["${aws_vpn_connection.onprem_to_tgw.tunnel1_address}/32"]
   }
 
   ingress {
@@ -132,7 +125,7 @@ resource "aws_security_group" "onprem_customer_gateway" {
     from_port   = 4500
     to_port     = 4500
     protocol    = "udp"
-    cidr_blocks = ["13.38.212.82/32"]
+    cidr_blocks = ["${aws_vpn_connection.onprem_to_tgw.tunnel1_address}/32"]
   }
 
   ingress {
@@ -140,7 +133,7 @@ resource "aws_security_group" "onprem_customer_gateway" {
     from_port   = 0
     to_port     = 0
     protocol    = "50"
-    cidr_blocks = ["13.38.212.82/32"]
+    cidr_blocks = ["${aws_vpn_connection.onprem_to_tgw.tunnel1_address}/32"]
   }
 
   ingress {
@@ -148,7 +141,7 @@ resource "aws_security_group" "onprem_customer_gateway" {
     from_port   = 500
     to_port     = 500
     protocol    = "udp"
-    cidr_blocks = ["15.224.92.217/32"]
+    cidr_blocks = ["${aws_vpn_connection.onprem_to_tgw.tunnel2_address}/32"]
   }
 
   ingress {
@@ -156,7 +149,7 @@ resource "aws_security_group" "onprem_customer_gateway" {
     from_port   = 4500
     to_port     = 4500
     protocol    = "udp"
-    cidr_blocks = ["15.224.92.217/32"]
+    cidr_blocks = ["${aws_vpn_connection.onprem_to_tgw.tunnel2_address}/32"]
   }
 
   ingress {
@@ -164,6 +157,36 @@ resource "aws_security_group" "onprem_customer_gateway" {
     from_port   = 0
     to_port     = 0
     protocol    = "50"
-    cidr_blocks = ["15.224.92.217/32"]
+    cidr_blocks = ["${aws_vpn_connection.onprem_to_tgw.tunnel2_address}/32"]
   }
+
+  egress {
+    description = "Allow all outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "Allow all from cloud VPCs"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+
+    cidr_blocks = [
+      "10.0.0.0/16",
+      "10.1.0.0/16",
+      "10.2.0.0/16"
+    ]
+  }
+
+  ingress {
+    description = "Allow VPN traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
 }

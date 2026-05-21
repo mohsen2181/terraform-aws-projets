@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Prefix used for resource names."
   type        = string
-  default     = "tgw-lab"
+  default     = "tgw-vpn-lab"
 }
 
 variable "enable_test_instances" {

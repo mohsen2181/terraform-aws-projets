@@ -6,10 +6,6 @@ resource "aws_customer_gateway" "onprem" {
   tags = {
     Name = "On-Premises Customer Gateway"
   }
-
-  depends_on = [
-    aws_eip_association.onprem_customer_gateway
-  ]
 }
 
 resource "aws_vpn_connection" "onprem_to_tgw" {
@@ -26,10 +22,15 @@ resource "aws_vpn_connection" "onprem_to_tgw" {
 resource "aws_ec2_transit_gateway_route_table_association" "vpn" {
   transit_gateway_attachment_id  = aws_vpn_connection.onprem_to_tgw.transit_gateway_attachment_id
   transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.main.id
+}
 
-  depends_on = [
-    aws_vpn_connection.onprem_to_tgw
-  ]
+# Propagation was missing: without this the TGW route table does not learn
+# the on-prem CIDR dynamically. The static aws_ec2_transit_gateway_route
+# below covers the on-prem → cloud direction, but adding propagation here
+# keeps the table consistent and future-proof (e.g. if you add BGP later).
+resource "aws_ec2_transit_gateway_route_table_propagation" "vpn" {
+  transit_gateway_attachment_id  = aws_vpn_connection.onprem_to_tgw.transit_gateway_attachment_id
+  transit_gateway_route_table_id = aws_ec2_transit_gateway_route_table.main.id
 }
 
 resource "aws_ec2_transit_gateway_route" "to_onprem" {
@@ -41,7 +42,6 @@ resource "aws_ec2_transit_gateway_route" "to_onprem" {
     aws_ec2_transit_gateway_route_table_association.vpn
   ]
 }
-
 
 locals {
   cloud_vpc_cidrs = [
@@ -57,10 +57,6 @@ resource "aws_route" "onprem_private_to_cloud_vpcs" {
   route_table_id         = aws_route_table.onprem_private.id
   destination_cidr_block = each.value
   network_interface_id   = aws_instance.onprem_customer_gateway.primary_network_interface_id
-
-  depends_on = [
-    aws_instance.onprem_customer_gateway
-  ]
 }
 
 resource "aws_route" "cloud_private_to_onprem" {
@@ -83,3 +79,4 @@ resource "aws_route" "cloud_private_to_onprem" {
     aws_ec2_transit_gateway_route.to_onprem
   ]
 }
+
