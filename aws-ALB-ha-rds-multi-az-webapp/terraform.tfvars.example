@@ -1,0 +1,11 @@
+﻿aws_region        = "us-east-1"
+environment       = "production"
+instance_type     = "t3.micro"
+db_instance_class = "db.t3.micro"
+db_name           = "sampledb"
+db_username       = "dbadmin"
+db_password       = "YourStrongPassword123!"
+
+# Route 53 Configuration
+enable_route53    = false
+domain_name       = "yourdomain.com"
