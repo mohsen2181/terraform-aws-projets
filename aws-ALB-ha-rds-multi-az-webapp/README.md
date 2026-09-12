@@ -2,7 +2,7 @@
 
 An enterprise-grade, highly available, and cost-optimized two-tier web application infrastructure provisioned entirely with **Terraform** on **AWS**.
 
-The stack deploys an **Application Load Balancer (ALB)** with an **ACM SSL/TLS Certificate** and **Route 53 DNS**, routing traffic to **Apache + PHP 8.x** web servers in private subnets, backed by an **Amazon RDS MySQL Multi-AZ** database instance with automatic failover.
+The stack deploys an **Application Load Balancer (ALB)** with an **ACM SSL/TLS Certificate** and **Route 53 DNS**, terminating TLS at the load balancer and routing decrypted traffic via an **ALB Target Group (HTTP Port 80)** to **Apache + PHP 8.x** web servers in private subnets, backed by an **Amazon RDS MySQL Multi-AZ** database instance with automatic failover.
 
 > 💰 **Cost Optimization**: The costly NAT Gateway (~$32.40/month) is replaced with a **100% Free S3 Gateway VPC Endpoint**, enabling private EC2 instances to download Amazon Linux 2023 repository packages (`httpd`, `php`, `php-mysqli`, `mariadb105`) directly over the internal AWS network without exposing instances to the public internet.
 
@@ -13,58 +13,69 @@ The stack deploys an **Application Load Balancer (ALB)** with an **ACM SSL/TLS C
 ```text
                                   [ Internet User ]
                                           │
-                                          │ (HTTPS / Port 443)
+                                          │ 🔒 Encrypted HTTPS (Port 443)
                                           ▼
                             [ Route 53 Hosted Zone ]
                                (e.g., example.com)
                                           │
                     ┌─────────────────────┴─────────────────────┐
                     │     Application Load Balancer (ALB)       │
-                    │        [ACM SSL/TLS Certificate]          │
-                    │        (Port 80 -> 443 Redirect)          │
-                    └─────────────────────┬─────────────────────┘
-                                          │
-      ┌───────────────────────────────────┴───────────────────────────────────┐
-      │                                                                       │
-      ▼                                                                       ▼
-┌───────────────────────────────────────────┐   ┌───────────────────────────────────────────┐
-│ Availability Zone 1                       │   │ Availability Zone 2                       │
-│                                           │   │                                           │
-│ ┌───────────────────────────────────────┐ │   │ ┌───────────────────────────────────────┐ │
-│ │ Public Subnet (10.10.0.0/24)          │ │   │ │ Public Subnet (10.10.1.0/24)          │ │
-│ │ • ALB Node 1                          │ │   │ │ • ALB Node 2                          │ │
-│ └───────────────────────────────────────┘ │   │ └───────────────────────────────────────┘ │
-│                                           │   │                                           │
-│ ┌───────────────────────────────────────┐ │   │ ┌───────────────────────────────────────┐ │
-│ │ Private Web Subnet (10.10.13.0/24)    │ │   │ │ Private Web Subnet (10.10.14.0/24)    │ │
-│ │ • EC2 Web Server (Apache + PHP 8)     │ │   │ │ • EC2 Web Server (Apache + PHP 8)     │ │
-│ └──────────────────┬────────────────────┘ │   │ └──────────────────┬────────────────────┘ │
-│                    │                      │   │                    │                      │
-│                    │   ┌──────────────────┴───┴──────────────────┐ │                      │
-│                    ├──►│    Free S3 Gateway VPC Endpoint         │◄┤                      │
-│                    │   │ (Amazon Linux 2023 dnf/yum packages)    │ │                      │
-│                    │   └─────────────────────────────────────────┘ │                      │
-│                    │                                               │                      │
-│                    └──────────────────┐       ┌────────────────────┘                      │
-│                                       ▼   ▼   ▼   ▼                                       │
-│ ┌───────────────────────────────────────┐ │   │ ┌───────────────────────────────────────┐ │
-│ │ Private DB Subnet (10.10.11.0/24)     │ │   │ │ Private DB Subnet (10.10.12.0/24)     │ │
-│ │ • RDS MySQL Primary (Active)          │ │───┼──► RDS MySQL Standby (Synchronous Sync) │ │
-│ └───────────────────────────────────────┘ │   │ └───────────────────────────────────────┘ │
-└───────────────────────────────────────────┘   └───────────────────────────────────────────┘
+                    │   ┌─────────────────────────────────────┐ │
+                    │   │   ACM SSL/TLS Certificate           │ │
+                    │   │   [★ TLS / SSL TERMINATION POINT ★] │ │
+                    │   │   • Decrypts HTTPS Traffic (Port 443)│ │
+                    │   │   • Port 80 -> 443 HTTP 301 Redirect│ │
+                    │   └──────────────────┬──────────────────┘ │
+                    └──────────────────────┼────────────────────┘
+                                           │
+                                           │ 🔓 Plaintext HTTP (Port 80)
+                                           ▼
+                    ┌───────────────────────────────────────────┐
+                    │             ALB Target Group              │
+                    │     (Port 80 HTTP / Round Robin)          │
+                    └──────────────────────┬────────────────────┘
+                                           │
+      ┌────────────────────────────────────┴────────────────────────────────────┐
+      │                                                                         │
+      ▼                                                                         ▼
+┌─────────────────────────────────────────────┐   ┌─────────────────────────────────────────────┐
+│ Availability Zone 1                         │   │ Availability Zone 2                         │
+│                                             │   │                                             │
+│ ┌─────────────────────────────────────────┐ │   │ ┌─────────────────────────────────────────┐ │
+│ │ Public Subnet (10.10.0.0/24)            │ │   │ │ Public Subnet (10.10.1.0/24)            │ │
+│ │ • ALB Node 1                            │ │   │ │ • ALB Node 2                            │ │
+│ └─────────────────────────────────────────┘ │   │ └─────────────────────────────────────────┘ │
+│                                             │   │                                             │
+│ ┌─────────────────────────────────────────┐ │   │ ┌─────────────────────────────────────────┐ │
+│ │ Private Web Subnet (10.10.13.0/24)      │ │   │ │ Private Web Subnet (10.10.14.0/24)      │ │
+│ │ • Target: EC2 Web Server 1              │ │   │ │ • Target: EC2 Web Server 2              │ │
+│ │   (Apache httpd Port 80 + PHP 8)        │ │   │ │   (Apache httpd Port 80 + PHP 8)        │ │
+│ └───────────────────┬─────────────────────┘ │   │ └───────────────────┬─────────────────────┘ │
+│                     │                       │   │                     │                       │
+│                     │   ┌───────────────────┴───┴───────────────────┐ │                       │
+│                     ├──►│       Free S3 Gateway VPC Endpoint        │◄┤                       │
+│                     │   │   (Amazon Linux 2023 dnf/yum packages)    │ │                       │
+│                     │   └───────────────────────────────────────────┘ │                       │
+│                     │                                                 │                       │
+│                     └───────────────────┐       ┌─────────────────────┘                       │
+│                                         ▼   ▼   ▼   ▼                                         │
+│ ┌─────────────────────────────────────────┐ │   │ ┌─────────────────────────────────────────┐ │
+│ │ Private DB Subnet (10.10.11.0/24)       │ │   │ │ Private DB Subnet (10.10.12.0/24)       │ │
+│ │ • RDS MySQL Primary (Port 3306 - Active)│ │───┼──► RDS MySQL Standby (Synchronous Sync)   │ │
+│ └─────────────────────────────────────────┘ │   │ └─────────────────────────────────────────┘ │
+└─────────────────────────────────────────────┘   └─────────────────────────────────────────────┘
 ```
 
-### Key Components
+### Key Components & Traffic Flow
 
-| Component | Description | Subnets / CIDRs |
+| Component | Protocol & Port | Description |
 | :--- | :--- | :--- |
-| **VPC** | Custom Virtual Private Cloud | `10.10.0.0/16` |
-| **Public Subnets** | Internet Gateway & Application Load Balancer | `10.10.0.0/24` (AZ1), `10.10.1.0/24` (AZ2) |
-| **Private Web Subnets** | Apache 2.4 & PHP 8 Web Servers | `10.10.13.0/24` (AZ1), `10.10.14.0/24` (AZ2) |
-| **Private DB Subnets** | Multi-AZ RDS MySQL 8.0 Engine | `10.10.11.0/24` (AZ1), `10.10.12.0/24` (AZ2) |
-| **S3 Gateway Endpoint** | Free VPC Endpoint for Amazon Linux package updates | Attached to Private Web Route Table |
-| **Security Chaining** | Strict Least-Privilege SG rules | ALB (80/443) $\rightarrow$ EC2 (Port 80) $\rightarrow$ RDS (Port 3306) |
-| **DNS & SSL** | Route 53 + ACM Certificate | Automated DNS validation & HTTPS termination |
+| **Client to ALB** | `HTTPS : 443` (Encrypted) | Encrypted TLS connection with ACM SSL Certificate. |
+| **ALB (TLS Termination)** | `TLS Offloading` | ALB decrypts the HTTPS payload at the edge and attaches `X-Forwarded-Proto: https`. |
+| **ALB Target Group** | `HTTP : 80` (Plaintext) | Routes traffic across EC2 instances in private subnets with health checks. |
+| **Target Group to EC2** | `HTTP : 80` (VPC Private) | Apache Web Servers execute PHP without SSL overhead. |
+| **EC2 to RDS Multi-AZ** | `MySQL : 3306` (Private) | High-availability MySQL database with synchronous standby replica in AZ 2. |
+| **S3 Gateway Endpoint** | `VPC Endpoint` (Free) | Direct private network routing for Amazon Linux 2023 package repository. |
 
 ---
 
@@ -76,7 +87,7 @@ The stack deploys an **Application Load Balancer (ALB)** with an **ACM SSL/TLS C
 ├── variables.tf               # Input variables (CIDRs, DB credentials, domain)
 ├── vpc.tf                     # VPC, 6 Subnets, IGW, S3 Gateway Endpoint, Route Tables
 ├── security_groups.tf         # Layered Security Groups for ALB, EC2, and RDS
-├── alb.tf                     # ALB, Target Group, HTTPS 443 Listener, HTTP 301 Redirect
+├── alb.tf                     # ALB, Target Group (Port 80), HTTPS 443 Listener, HTTP 301 Redirect
 ├── acm.tf                     # ACM SSL Certificate with Route 53 DNS validation
 ├── ec2.tf                     # EC2 instances in private subnets with IAM & SSM
 ├── user_data.sh.tpl           # Startup script installing Apache, PHP, and MySQL app
