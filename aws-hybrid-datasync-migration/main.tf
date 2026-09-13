@@ -133,6 +133,10 @@ resource "aws_datasync_location_s3" "s3_destination" {
   s3_config {
     bucket_access_role_arn = aws_iam_role.datasync_s3_role.arn
   }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.datasync_s3_attach
+  ]
 }
 
 resource "aws_datasync_task" "nfs_to_s3" {

@@ -1,0 +1,5 @@
+# Example configuration - Copy to terraform.tfvars and fill in your values
+aws_region = "eu-west-3"
+
+# Your public IP address for temporary DataSync Agent HTTP activation
+my_ip = "1.2.3.4"

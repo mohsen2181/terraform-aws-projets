@@ -23,24 +23,3 @@ data "aws_ami" "datasync_agent" {
     values = ["hvm"]
   }
 }
-
-
-data "aws_ami" "file_gateway" {
-  most_recent = true
-  owners      = ["amazon"]
-
-  filter {
-    name   = "name"
-    values = ["aws-storage-gateway-FILE_S3-*"]
-  }
-
-  filter {
-    name   = "architecture"
-    values = ["x86_64"]
-  }
-
-  filter {
-    name   = "virtualization-type"
-    values = ["hvm"]
-  }
-}

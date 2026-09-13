@@ -58,7 +58,6 @@ resource "aws_security_group" "app_server_sg" {
   }
 }
 
-
 resource "aws_security_group" "datasync_agent_sg" {
   name        = "datasync-agent-sg"
   description = "DataSync Agent security group"
@@ -85,7 +84,7 @@ resource "aws_security_group" "datasync_agent_sg" {
     from_port   = 80
     to_port     = 80
     protocol    = "tcp"
-    cidr_blocks = ["176.147.243.147/32"]
+    cidr_blocks = ["${var.my_ip}/32"]
   }
 
   egress {
