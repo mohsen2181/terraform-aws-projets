@@ -1,260 +1,270 @@
-# 🧪 AWS Hybrid DataSync Migration - Testing Notes
+# 🧪 AWS Hybrid DataSync Migration - Operational Testing Runbook
 
-> Operational validation and testing commands for the AWS Hybrid NFS → DataSync → S3 migration project.
+> Step-by-step operational validation, monitoring, and verification commands for the AWS Hybrid NFS → DataSync → S3 migration project.
+> All commands use dynamic AWS CLI queries and Terraform outputs for direct copy-paste execution.
 
 ---
 
-# ✅ Verify AWS Identity
+## 📑 Quick Navigation
+
+- [1. Environment & Identity Check](#1-environment--identity-check)
+- [2. EC2 & Network Discovery](#2-ec2--network-discovery)
+- [3. AWS Systems Manager (SSM) Connectivity](#3-aws-systems-manager-ssm-connectivity)
+- [4. Validate NFS Server Health](#4-validate-nfs-server-health)
+- [5. Validate App Server & Generate Live Data](#5-validate-app-server--generate-live-data)
+- [6. Trigger & Monitor AWS DataSync Task](#6-trigger--monitor-aws-datasync-task)
+- [7. Verify Migrated Objects in Amazon S3](#7-verify-migrated-objects-in-amazon-s3)
+- [8. Clean Teardown & Versioned S3 Purge](#8-clean-teardown--versioned-s3-purge)
+
+---
+
+## 1. Environment & Identity Check
+
+Verify your AWS CLI credentials and default region:
 
 ```bash
+# Set your active lab region
+export AWS_REGION="eu-west-3"
+
+# Verify active AWS identity
 aws sts get-caller-identity
 ```
 
 ---
 
-# 🖥️ EC2 Discovery
+## 2. EC2 & Network Discovery
 
-## List EC2 Instances
+List all project instances with their private and public IPs:
 
 ```bash
 aws ec2 describe-instances \
-  --query "Reservations[*].Instances[*].[InstanceId,Tags[?Key=='Name'].Value|[0],PrivateIpAddress]" \
+  --filters "Name=tag:Name,Values=onprem-*" "Name=instance-state-name,Values=running" \
+  --query "Reservations[*].Instances[*].[Tags[?Key=='Name'].Value|[0],InstanceId,PrivateIpAddress,PublicIpAddress]" \
   --output table \
-  --region eu-west-3
+  --region $AWS_REGION
 ```
 
----
-
-# 🔎 Retrieve Instance IDs by Tags
-
-## NFS Server
+### Store Instance IDs Dynamically
 
 ```bash
-aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=onprem-nfs-server" \
-  --query "Reservations[*].Instances[*].InstanceId" \
-  --output text \
-  --region eu-west-3
+# Dynamic variables for zero manual editing
+export NFS_SERVER_ID=$(aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=onprem-nfs-server" "Name=instance-state-name,Values=running" \
+  --query "Reservations[0].Instances[0].InstanceId" --output text --region $AWS_REGION)
+
+export APP_SERVER_ID=$(aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=onprem-app-server" "Name=instance-state-name,Values=running" \
+  --query "Reservations[0].Instances[0].InstanceId" --output text --region $AWS_REGION)
+
+export AGENT_ID=$(aws ec2 describe-instances \
+  --filters "Name=tag:Name,Values=onprem-datasync-agent" "Name=instance-state-name,Values=running" \
+  --query "Reservations[0].Instances[0].InstanceId" --output text --region $AWS_REGION)
+
+echo "NFS Server ID:     $NFS_SERVER_ID"
+echo "App Server ID:     $APP_SERVER_ID"
+echo "DataSync Agent ID: $AGENT_ID"
 ```
 
 ---
 
-## App Server
+## 3. AWS Systems Manager (SSM) Connectivity
 
-```bash
-aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=onprem-app-server" \
-  --query "Reservations[*].Instances[*].InstanceId" \
-  --output text \
-  --region eu-west-3
-```
-
----
-
-## DataSync Agent
-
-```bash
-aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=onprem-datasync-agent" \
-  --query "Reservations[*].Instances[*].InstanceId" \
-  --output text \
-  --region eu-west-3
-```
-
----
-
-# 🔐 AWS Systems Manager (SSM)
-
-## Verify SSM Connectivity
+Verify that private instances are communicating through the **VPC Interface Endpoints**:
 
 ```bash
 aws ssm describe-instance-information \
-  --region eu-west-3 \
-  --output table
+  --query "InstanceInformationList[*].[InstanceId,ComputerName,PingStatus,IPAddress,PlatformName]" \
+  --output table \
+  --region $AWS_REGION
 ```
+
+> **Note:** If an instance shows missing immediately after launch, wait 60–90 seconds for the SSM agent daemon to complete registration through the interface endpoints.
 
 ---
 
-## Connect to EC2 Instance Using SSM
+## 4. Validate NFS Server Health
+
+Start an interactive session into the NFS server without SSH keys:
 
 ```bash
-aws ssm start-session \
-  --target i-0123456789abcdef0 \
-  --region eu-west-3
+aws ssm start-session --target $NFS_SERVER_ID --region $AWS_REGION
 ```
 
----
-
-## Connect to App Server Using Tags
+### Run Inside the NFS Server Session:
 
 ```bash
-aws ssm start-session \
-  --target $(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=onprem-app-server" \
-  --query "Reservations[*].Instances[*].InstanceId" \
-  --output text \
-  --region eu-west-3) \
-  --region eu-west-3
-```
+# 1. Check NFS service status
+sudo systemctl status nfs-server --no-pager
 
----
-
-## Connect to NFS Server Using Tags
-
-```bash
-aws ssm start-session \
-  --target $(aws ec2 describe-instances \
-  --filters "Name=tag:Name,Values=onprem-nfs-server" \
-  --query "Reservations[*].Instances[*].InstanceId" \
-  --output text \
-  --region eu-west-3) \
-  --region eu-west-3
-```
-
----
-
-# 📂 Validate NFS Server
-
-Run inside the NFS Server:
-
-```bash
-sudo systemctl status nfs-server
+# 2. Check exported filesystems
 sudo exportfs -v
-sudo ss -tulpen | grep 2049
-```
 
-Expected:
+# 3. Verify NFS port 2049 and RPC port 111 are listening
+sudo ss -tulpen | grep -E "2049|111"
 
-```text
-NFS service active
-Port 2049 listening
-Exported filesystem visible
+# 4. Check auto-seeded test files generated by user-data
+ls -la /media/data/images
+cat /media/data/test-nfs.txt
+
+# 5. Exit session
+exit
 ```
 
 ---
 
-# 📁 Generate Migration Test Files
+## 5. Validate App Server & Generate Live Data
 
-Run inside the App Server:
+Connect to the application server to test NFS client mounting:
 
 ```bash
-sudo mkdir -p /mnt/data/test
+aws ssm start-session --target $APP_SERVER_ID --region $AWS_REGION
+```
 
+### Run Inside the App Server Session:
+
+```bash
+# 1. Pre-flight check: Verify /mnt/data is mounted over NFS
+mountpoint -q /mnt/data && echo "✅ /mnt/data is successfully mounted" || echo "❌ NFS is NOT mounted!"
+df -hT /mnt/data
+
+# 2. Inspect files mounted from the NFS server
+ls -la /mnt/data/images
+
+# 3. Simulate production data generation by creating live files
+sudo mkdir -p /mnt/data/live-migration-batch
 for i in {1..10}; do
-  echo "Migration test file $i" | sudo tee /mnt/data/test/file-$i.txt
+  echo "Production transaction record #$i generated on $(date)" | sudo tee /mnt/data/live-migration-batch/tx-$i.log
+done
+
+# 4. Confirm newly generated files
+ls -la /mnt/data/live-migration-batch/
+
+# 5. Exit session
+exit
+```
+
+---
+
+## 6. Trigger & Monitor AWS DataSync Task
+
+### Fetch Task & S3 Bucket Dynamically
+
+Run from your local workstation / Vagrant VM:
+
+```bash
+# Get Task ARN dynamically
+export TASK_ARN=$(terraform output -raw datasync_task_arn 2>/dev/null || \
+  aws datasync list-tasks --region $AWS_REGION --query "Tasks[?contains(Name, 'nfs-to-s3')].TaskArn" --output text)
+
+# Get S3 Bucket name dynamically
+export BUCKET_NAME=$(terraform output -raw migration_bucket_name 2>/dev/null || \
+  aws s3api list-buckets --query "Buckets[?contains(Name, 'migration-bucket')].Name" --output text)
+
+echo "DataSync Task ARN: $TASK_ARN"
+echo "Target S3 Bucket:  $BUCKET_NAME"
+```
+
+### Start Task Execution
+
+```bash
+export EXECUTION_ARN=$(aws datasync start-task-execution \
+  --task-arn $TASK_ARN \
+  --region $AWS_REGION \
+  --query "TaskExecutionArn" --output text)
+
+echo "Started Execution: $EXECUTION_ARN"
+```
+
+### Real-Time Live Status Watcher
+
+Run this loop to watch the task transition through its lifecycle phases (`LAUNCHING` → `PREPARING` → `TRANSFERRING` → `VERIFYING` → `SUCCESS`):
+
+```bash
+while true; do
+  STATUS_INFO=$(aws datasync describe-task-execution \
+    --task-execution-arn $EXECUTION_ARN \
+    --region $AWS_REGION \
+    --query "{Status:Status,Files:FilesTransferred,Bytes:BytesTransferred}" \
+    --output text)
+  
+  STATUS=$(echo "$STATUS_INFO" | awk '{print $3}')
+  FILES=$(echo "$STATUS_INFO" | awk '{print $1}')
+  BYTES=$(echo "$STATUS_INFO" | awk '{print $2}')
+  
+  echo "[$(date +'%T')] Status: $STATUS | Files Transferred: $FILES | Bytes: $BYTES"
+  
+  if [[ "$STATUS" == "SUCCESS" || "$STATUS" == "ERROR" ]]; then
+    break
+  fi
+  sleep 10
 done
 ```
 
----
-
-# 🔄 AWS DataSync Operations
-
-## List DataSync Tasks
-
-```bash
-aws datasync list-tasks --region eu-west-3
-```
-
----
-
-## Start DataSync Task
-
-```bash
-aws datasync start-task-execution \
-  --task-arn arn:aws:datasync:eu-west-3:ACCOUNT_ID:task/TASK_ID \
-  --region eu-west-3
-```
-
----
-
-## Monitor Migration
+### View Detailed Execution Summary
 
 ```bash
 aws datasync describe-task-execution \
-  --task-execution-arn arn:aws:datasync:eu-west-3:ACCOUNT_ID:task/TASK_ID/execution/EXECUTION_ID \
-  --region eu-west-3
+  --task-execution-arn $EXECUTION_ARN \
+  --region $AWS_REGION \
+  --query "{Status:Status,EstimatedFiles:EstimatedFilesToTransfer,FilesTransferred:FilesTransferred,BytesTransferred:BytesTransferred,Result:Result}" \
+  --output json
 ```
 
 ---
 
-## Monitor Migration (Filtered Output)
+## 7. Verify Migrated Objects in Amazon S3
+
+### List All Migrated Files
 
 ```bash
-aws datasync describe-task-execution \
-  --task-execution-arn arn:aws:datasync:eu-west-3:ACCOUNT_ID:task/TASK_ID/execution/EXECUTION_ID \
-  --region eu-west-3 \
-  --query '{Status:Status,EstimatedFiles:EstimatedFilesToTransfer,FilesTransferred:FilesTransferred,BytesTransferred:BytesTransferred,ErrorCode:Result.ErrorCode,ErrorDetail:Result.ErrorDetail}'
+aws s3 ls s3://$BUCKET_NAME/migration-output/ --recursive --human-readable
+```
+
+### Validate File Contents Directly from S3
+
+Inspect the content of both seeded and live transaction files directly from S3 without downloading:
+
+```bash
+# Read seeded file content
+aws s3 cp s3://$BUCKET_NAME/migration-output/images/file-01.txt -
+
+# Read live transaction file generated during production simulation
+aws s3 cp s3://$BUCKET_NAME/migration-output/live-migration-batch/tx-1.log -
 ```
 
 ---
 
-# ☁️ Verify Migrated Files in S3
+## 8. Clean Teardown & Versioned S3 Purge
+
+Because S3 Bucket Versioning is enabled on `migration_bucket`, standard deletion will fail with `BucketNotEmpty`. Always run this purge sequence before `terraform destroy`:
+
+### Purge All S3 Versions & Delete Markers
 
 ```bash
-aws s3 ls s3://migration-lab-datasync-<suffix>/migration-output/ --recursive
-```
+export BUCKET_NAME=$(terraform output -raw migration_bucket_name 2>/dev/null || \
+  aws s3api list-buckets --query "Buckets[?contains(Name, 'migration-bucket')].Name" --output text)
 
-Expected:
+echo "Purging all object versions from: $BUCKET_NAME..."
 
-```text
-migration-output/test/file-1.txt
-migration-output/test/file-2.txt
-...
-```
-
----
-
-# 🧹 Cleanup Notes
-
-## Empty Versioned S3 Bucket
-
-```bash
 aws s3api delete-objects \
-  --bucket <BUCKET_NAME> \
+  --bucket $BUCKET_NAME \
   --delete "$(aws s3api list-object-versions \
-    --bucket <BUCKET_NAME> \
-    --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}')"
+    --bucket $BUCKET_NAME \
+    --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}' \
+    --output json)" 2>/dev/null
+
+aws s3api delete-objects \
+  --bucket $BUCKET_NAME \
+  --delete "$(aws s3api list-object-versions \
+    --bucket $BUCKET_NAME \
+    --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}' \
+    --output json)" 2>/dev/null
+
+echo "✅ S3 Bucket is now completely empty."
 ```
 
----
-
-## Destroy Infrastructure
+### Destroy Infrastructure
 
 ```bash
-terraform destroy
+terraform destroy -auto-approve
 ```
-
----
-
-# 📚 Validation Goals
-
-This testing workflow validates:
-
-- AWS CLI access
-- IAM permissions
-- SSM connectivity
-- NFS server functionality
-- DataSync agent health
-- DataSync migration execution
-- S3 object migration
-- Hybrid networking
-- VPC peering
-- VPC endpoint connectivity
-
----
-
-# 🎯 Expected Final Outcome
-
-```text
-Application Server
-        ↓ NFS
-NFS Server
-        ↓ NFS
-DataSync Agent
-        ↓ TLS
-AWS DataSync Service
-        ↓
-Amazon S3 Bucket
-```
-
-Successful migration confirms the hybrid architecture is fully operational.
