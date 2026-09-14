@@ -126,6 +126,15 @@ resource "aws_datasync_location_nfs" "nfs_source" {
 }
 
 
+resource "time_sleep" "wait_for_iam_replication" {
+  depends_on = [
+    aws_iam_role.datasync_s3_role,
+    aws_iam_role_policy_attachment.datasync_s3_attach
+  ]
+
+  create_duration = "30s"
+}
+
 resource "aws_datasync_location_s3" "s3_destination" {
   s3_bucket_arn = aws_s3_bucket.migration_bucket.arn
   subdirectory  = "/migration-output"
@@ -135,7 +144,7 @@ resource "aws_datasync_location_s3" "s3_destination" {
   }
 
   depends_on = [
-    aws_iam_role_policy_attachment.datasync_s3_attach
+    time_sleep.wait_for_iam_replication
   ]
 }
 
