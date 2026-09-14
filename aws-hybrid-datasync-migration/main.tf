@@ -139,6 +139,9 @@ resource "aws_datasync_location_s3" "s3_destination" {
   s3_bucket_arn = aws_s3_bucket.migration_bucket.arn
   subdirectory  = "/migration-output"
 
+    # Set your desired storage class here:
+    # s3_storage_class = "INTELLIGENT_TIERING"  # or "GLACIER_INSTANT_RETRIEVAL", "DEEP_ARCHIVE", etc.  
+
   s3_config {
     bucket_access_role_arn = aws_iam_role.datasync_s3_role.arn
   }

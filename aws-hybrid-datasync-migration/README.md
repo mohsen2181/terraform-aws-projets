@@ -126,6 +126,7 @@ sequenceDiagram
 * **IAM Authorization:** The AWS DataSync managed cloud service assumes the dedicated `datasync_s3_role` to write objects into the target S3 bucket under the prefix `/migration-output/`.
 * **At-Rest Protection:** S3 automatically applies **SSE-S3 (AES-256)** encryption upon arrival.
 * **S3 Versioning:** Protects migrated data against accidental overwrites or deletions during sync iterations.
+* **Direct Storage Class Selection:** DataSync can ingest directly into cost-optimized storage tiers (such as `INTELLIGENT_TIERING`, `GLACIER_INSTANT_RETRIEVAL`, or `DEEP_ARCHIVE`), bypassing S3 Standard completely and avoiding the 30-day lifecycle transition delay.
 
 #### 5. Integrity & Checksum Verification (`VERIFYING`)
 * **End-to-End Validation:** Configured with `verify_mode = "ONLY_FILES_TRANSFERRED"`, DataSync recalculates checksums for all transferred files and matches them against destination S3 object checksums before closing the task.
@@ -345,6 +346,36 @@ This lab is tuned to minimize AWS charges while meeting AWS DataSync minimum sys
 | `migration_bucket` | Standard S3 | Destination storage | ~$0.023 / GB / mo |
 
 > **Pro-Tip:** Always tear down the environment immediately after testing to avoid ongoing EC2 and VPC Endpoint hourly costs.
+
+### 💡 Cost Optimization: Direct Ingestion into S3 Storage Classes
+
+By default, AWS DataSync writes to `STANDARD` storage. However, you can configure DataSync to write **directly** into lower-cost tiers on day one by setting the `s3_storage_class` parameter in `aws_datasync_location_s3` in `main.tf`:
+
+```hcl
+resource "aws_datasync_location_s3" "s3_destination" {
+  s3_bucket_arn    = aws_s3_bucket.migration_bucket.arn
+  subdirectory     = "/migration-output"
+
+  # Optional: Write directly into non-standard storage classes
+  s3_storage_class = "INTELLIGENT_TIERING"  # or "GLACIER_INSTANT_RETRIEVAL", "DEEP_ARCHIVE", etc.
+
+  s3_config {
+    bucket_access_role_arn = aws_iam_role.datasync_s3_role.arn
+  }
+
+  depends_on = [
+    time_sleep.wait_for_iam_replication
+  ]
+}
+```
+
+#### Why Direct Ingestion Saves Significant Cloud Spend:
+* **Bypasses the 30-Day S3 Lifecycle Minimum:** Standard S3 Lifecycle rules require objects to stay in `STANDARD` for at least 30 days before transitioning to Glacier or Deep Archive. Direct ingestion places objects into cold tiers **immediately on day one**.
+* **Zero Lifecycle Transition API Fees:** Eliminates the per-request PUT/transition charges incurred when moving millions of objects via lifecycle rules.
+* **Supported Storage Classes:**
+  * **`INTELLIGENT_TIERING`**: Best for datasets with unknown or variable access patterns (automatically optimizes cost with zero retrieval fees).
+  * **`GLACIER_INSTANT_RETRIEVAL`**: Ideal for archive files that are rarely accessed but require millisecond retrieval.
+  * **`DEEP_ARCHIVE`**: Lowest cost storage (~$0.00099/GB/month) for long-term compliance backups.
 
 ---
 
