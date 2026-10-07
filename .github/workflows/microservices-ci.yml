@@ -1,0 +1,75 @@
+name: "Microservices CI/CD"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "terraform-ecommerce/backend/**"
+      - ".github/workflows/microservices-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ROLE_TO_ASSUME: arn:aws:iam::727742746869:role/github-actions-ecommerce-role
+
+jobs:
+  build-and-push:
+    name: "Build & Push Microservices"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        service:
+          - name: "product-service"
+            dir: "product-service"
+            repo: "ecommerce/product-service"
+          - name: "cart-service"
+            dir: "cart-service"
+            repo: "ecommerce/cart-service"
+          - name: "user-service"
+            dir: "user-service"
+            repo: "ecommerce/user-service"
+          - name: "order-service"
+            dir: "order-service"
+            repo: "ecommerce/order-service"
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build, Tag, and Push Docker Image
+        env:
+          REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          REPOSITORY: ${{ matrix.service.repo }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          cd terraform-ecommerce/backend/${{ matrix.service.dir }}
+          
+          echo "Building image for ${{ matrix.service.name }}..."
+          docker build -t $REGISTRY/$REPOSITORY:latest -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+          
+          echo "Pushing images to ECR..."
+          docker push $REGISTRY/$REPOSITORY:latest
+          docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
+
+      - name: Rollout ECS Service (if running)
+        run: |
+          aws ecs update-service \
+            --cluster ecommerce-cluster \
+            --service ${{ matrix.service.name }} \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }} || echo "ECS cluster or service not yet active, skipping rollout."

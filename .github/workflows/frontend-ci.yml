@@ -1,0 +1,73 @@
+name: "Frontend CI/CD"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "terraform-ecommerce/frontend/**"
+      - ".github/workflows/frontend-ci.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ROLE_TO_ASSUME: arn:aws:iam::727742746869:role/github-actions-ecommerce-role
+
+jobs:
+  deploy-frontend:
+    name: "Build & Deploy React SPA"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+          cache: "npm"
+          cache-dependency-path: "terraform-ecommerce/frontend/react-app/package-lock.json"
+
+      - name: Install Frontend Dependencies
+        working-directory: terraform-ecommerce/frontend/react-app
+        run: npm ci
+
+      - name: Build React SPA
+        working-directory: terraform-ecommerce/frontend/react-app
+        run: npm run build
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Sync Production Bundle to S3 & Invalidate CloudFront
+        run: |
+          ACCOUNT_ID="727742746869"
+          BUCKET_NAME="ecommerce-frontend-assets-${ACCOUNT_ID}"
+          
+          echo "Checking if S3 frontend bucket exists..."
+          if aws s3 ls "s3://${BUCKET_NAME}" > /dev/null 2>&1; then
+            echo "Syncing React build to s3://${BUCKET_NAME}..."
+            aws s3 sync terraform-ecommerce/frontend/react-app/build/ "s3://${BUCKET_NAME}/" --delete
+            
+            echo "Finding CloudFront distribution for ${BUCKET_NAME}..."
+            DIST_ID=$(aws cloudfront list-distributions \
+              --query "DistributionList.Items[?Origins.Items[?contains(DomainName, '${BUCKET_NAME}')]].Id | [0]" \
+              --output text)
+            
+            if [ -n "$DIST_ID" ] && [ "$DIST_ID" != "None" ]; then
+              echo "Creating CloudFront invalidation for distribution ${DIST_ID}..."
+              aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
+              echo "CloudFront cache invalidation submitted successfully!"
+            else
+              echo "No CloudFront distribution found for bucket, skipping invalidation."
+            fi
+          else
+            echo "Bucket s3://${BUCKET_NAME} does not exist yet. Run terraform apply first."
+          fi

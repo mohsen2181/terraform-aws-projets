@@ -1,0 +1,902 @@
+[
+  {
+    "product_id": "prod-001",
+    "name": "Wireless Noise-Cancelling Headphones",
+    "description": "Over-ear bluetooth headphones with active noise cancellation and 35h battery life.",
+    "price": 149.99,
+    "stock": 57,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-001.jpg"
+  },
+  {
+    "product_id": "prod-002",
+    "name": "True Wireless Earbuds Pro",
+    "description": "Compact water-resistant earbuds with deep bass and wireless charging case.",
+    "price": 89.99,
+    "stock": 64,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-002.jpg"
+  },
+  {
+    "product_id": "prod-003",
+    "name": "Portable Bluetooth Speaker 360",
+    "description": "Rugged waterproof outdoor speaker with 360-degree surround sound.",
+    "price": 49.99,
+    "stock": 71,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-003.jpg"
+  },
+  {
+    "product_id": "prod-004",
+    "name": "Studio Monitor Studio Headphones",
+    "description": "Professional reference monitor headphones with ultra-flat acoustic response.",
+    "price": 179.99,
+    "stock": 78,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-004.jpg"
+  },
+  {
+    "product_id": "prod-005",
+    "name": "Gaming Headset with Surround 7.1",
+    "description": "Immersive spatial audio headset with flexible detachable boom microphone.",
+    "price": 79.99,
+    "stock": 85,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-005.jpg"
+  },
+  {
+    "product_id": "prod-006",
+    "name": "Smart Soundbar with Subwoofer",
+    "description": "High-fidelity Dolby Atmos soundbar for immersive home theater audio.",
+    "price": 199.99,
+    "stock": 92,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-006.jpg"
+  },
+  {
+    "product_id": "prod-007",
+    "name": "Retro Vintage Bluetooth Speaker",
+    "description": "Aesthetic vintage wooden enclosure speaker with crystal clear highs.",
+    "price": 69.99,
+    "stock": 99,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-007.jpg"
+  },
+  {
+    "product_id": "prod-008",
+    "name": "Bone Conduction Sports Headphones",
+    "description": "Open-ear wireless headphones designed for runners, cyclists, and fitness.",
+    "price": 99.99,
+    "stock": 106,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-008.jpg"
+  },
+  {
+    "product_id": "prod-009",
+    "name": "Conference USB Speakerphone",
+    "description": "Omnidirectional 360 microphone array with noise reduction for online meetings.",
+    "price": 119.99,
+    "stock": 113,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-009.jpg"
+  },
+  {
+    "product_id": "prod-010",
+    "name": "Hi-Fi Desktop Bookshelf Speakers",
+    "description": "Powered bluetooth stereo monitors with optical, coaxial, and aux inputs.",
+    "price": 159.99,
+    "stock": 120,
+    "category": "Audio",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-010.jpg"
+  },
+  {
+    "product_id": "prod-011",
+    "name": "Ultra-Slim Laptop 14-inch IPS",
+    "description": "Lightweight magnesium alloy chassis with Intel Core i7 and 16GB LPDDR5.",
+    "price": 899.99,
+    "stock": 127,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-011.jpg"
+  },
+  {
+    "product_id": "prod-012",
+    "name": "Gaming Laptop RTX 4070 16-inch",
+    "description": "High refresh 165Hz QHD display, Ryzen 9 processor, and RGB backlit keyboard.",
+    "price": 1499.99,
+    "stock": 134,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-012.jpg"
+  },
+  {
+    "product_id": "prod-013",
+    "name": "2-in-1 Touchscreen Convertible Tablet",
+    "description": "Versatile 360-degree hinge laptop with stylus pen support and FHD OLED screen.",
+    "price": 649.99,
+    "stock": 141,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-013.jpg"
+  },
+  {
+    "product_id": "prod-014",
+    "name": "Mini Desktop PC Ryzen 7",
+    "description": "Ultra-compact form factor workstation supporting triple 4K display output.",
+    "price": 499.99,
+    "stock": 148,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-014.jpg"
+  },
+  {
+    "product_id": "prod-015",
+    "name": "All-in-One Desktop 27-inch 4K",
+    "description": "Sleek borderless aluminum desktop with integrated pop-up webcam and wireless kit.",
+    "price": 1199.99,
+    "stock": 155,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-015.jpg"
+  },
+  {
+    "product_id": "prod-016",
+    "name": "Budget Chromebook 11.6-inch",
+    "description": "Fast-booting durable laptop optimized for school, browsing, and cloud tasks.",
+    "price": 219.99,
+    "stock": 162,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-016.jpg"
+  },
+  {
+    "product_id": "prod-017",
+    "name": "Fanless Silent Mini PC",
+    "description": "Low power consumption micro desktop ideal for home media servers and office.",
+    "price": 329.99,
+    "stock": 169,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-017.jpg"
+  },
+  {
+    "product_id": "prod-018",
+    "name": "High-Performance Workstation Laptop",
+    "description": "Mobile powerhouse with 64GB RAM, 2TB NVMe SSD, and professional workstation GPU.",
+    "price": 1899.99,
+    "stock": 176,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-018.jpg"
+  },
+  {
+    "product_id": "prod-019",
+    "name": "Compact Rugged Industrial Tablet",
+    "description": "IP67 dust and shockproof tablet with barcode scanner and sunlight-readable screen.",
+    "price": 749.99,
+    "stock": 183,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-019.jpg"
+  },
+  {
+    "product_id": "prod-020",
+    "name": "Cloud Developer Laptop 15-inch",
+    "description": "Preconfigured Linux-ready developer laptop with 32GB RAM and dual NVMe slots.",
+    "price": 999.99,
+    "stock": 190,
+    "category": "Computers & Laptops",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-020.jpg"
+  },
+  {
+    "product_id": "prod-021",
+    "name": "RGB Mechanical Gaming Keyboard",
+    "description": "Hot-swappable tactile switches with per-key RGB backlighting and wrist rest.",
+    "price": 119.99,
+    "stock": 197,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-021.jpg"
+  },
+  {
+    "product_id": "prod-022",
+    "name": "Ultralight Wireless Gaming Mouse",
+    "description": "Ultra-fast optical sensor with 26000 DPI and lightweight honeycomb shell.",
+    "price": 69.99,
+    "stock": 204,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-022.jpg"
+  },
+  {
+    "product_id": "prod-023",
+    "name": "Curved Ultrawide Gaming Monitor 34-inch",
+    "description": "144Hz 1ms response curved panel with AMD FreeSync Premium and HDR400.",
+    "price": 449.99,
+    "stock": 211,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-023.jpg"
+  },
+  {
+    "product_id": "prod-024",
+    "name": "Ergonomic Racing Gaming Chair",
+    "description": "High-density molded foam padding with 4D armrests and lumbar support cushion.",
+    "price": 229.99,
+    "stock": 218,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-024.jpg"
+  },
+  {
+    "product_id": "prod-025",
+    "name": "Dual Wireless Game Controller",
+    "description": "Precision analog triggers with hall-effect anti-drift joysticks and rumble feedback.",
+    "price": 59.99,
+    "stock": 225,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-025.jpg"
+  },
+  {
+    "product_id": "prod-026",
+    "name": "Microfiber XL Extended Mouse Pad",
+    "description": "Stitched edges waterproof desk mat with anti-slip rubber textured base.",
+    "price": 24.99,
+    "stock": 232,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-026.jpg"
+  },
+  {
+    "product_id": "prod-027",
+    "name": "RGB Headphone Stand with USB Hub",
+    "description": "Dual USB 3.0 pass-through ports with 9 dynamic RGB lighting modes.",
+    "price": 34.99,
+    "stock": 239,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-027.jpg"
+  },
+  {
+    "product_id": "prod-028",
+    "name": "Streaming Audio Mixer & Sound Board",
+    "description": "Hardware audio interface with volume faders, voice effects, and mute buttons.",
+    "price": 149.99,
+    "stock": 246,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-028.jpg"
+  },
+  {
+    "product_id": "prod-029",
+    "name": "Flight Simulator Joystick & Throttle",
+    "description": "Dual-engine throttle quadrant with magnetic sensors and 16 programmable buttons.",
+    "price": 179.99,
+    "stock": 253,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-029.jpg"
+  },
+  {
+    "product_id": "prod-030",
+    "name": "Racing Wheel and Pedals Set",
+    "description": "Force feedback dual-motor racing wheel with responsive 3-pedal floor system.",
+    "price": 299.99,
+    "stock": 260,
+    "category": "Gaming",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-030.jpg"
+  },
+  {
+    "product_id": "prod-031",
+    "name": "Smart Wi-Fi Video Doorbell 2K",
+    "description": "Two-way audio video doorbell with infrared night vision and person detection.",
+    "price": 129.99,
+    "stock": 267,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-031.jpg"
+  },
+  {
+    "product_id": "prod-032",
+    "name": "Smart Color LED Light Bulb 4-Pack",
+    "description": "16 million colors dimmable smart bulbs compatible with Alexa and Google Assistant.",
+    "price": 39.99,
+    "stock": 274,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-032.jpg"
+  },
+  {
+    "product_id": "prod-033",
+    "name": "Smart Thermostat with Room Sensor",
+    "description": "Energy Star certified learning thermostat with remote smartphone control.",
+    "price": 169.99,
+    "stock": 281,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-033.jpg"
+  },
+  {
+    "product_id": "prod-034",
+    "name": "Indoor 360 Pan-Tilt Security Camera",
+    "description": "Full HD security camera with AI motion tracking and local SD card storage.",
+    "price": 49.99,
+    "stock": 288,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-034.jpg"
+  },
+  {
+    "product_id": "prod-035",
+    "name": "Smart Plug with Energy Monitoring 4-Pack",
+    "description": "Voice controlled Wi-Fi outlets with real-time electrical wattage monitoring.",
+    "price": 29.99,
+    "stock": 295,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-035.jpg"
+  },
+  {
+    "product_id": "prod-036",
+    "name": "Smart Keyless Entry Door Lock",
+    "description": "Biometric fingerprint scanner deadbolt with auto-lock and keypad entry.",
+    "price": 189.99,
+    "stock": 52,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-036.jpg"
+  },
+  {
+    "product_id": "prod-037",
+    "name": "Robot Vacuum and Mop Combo",
+    "description": "LiDAR laser navigation robot vacuum with automatic dustbin self-emptying base.",
+    "price": 399.99,
+    "stock": 59,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-037.jpg"
+  },
+  {
+    "product_id": "prod-038",
+    "name": "Smart Air Purifier with HEPA Filter",
+    "description": "Captures 99.97% of airborne particles with smart air quality sensor display.",
+    "price": 139.99,
+    "stock": 66,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-038.jpg"
+  },
+  {
+    "product_id": "prod-039",
+    "name": "Smart Outdoor Solar Security Floodlight",
+    "description": "Motion-activated ultra-bright LED floodlight with integrated solar charging panel.",
+    "price": 89.99,
+    "stock": 73,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-039.jpg"
+  },
+  {
+    "product_id": "prod-040",
+    "name": "Smart Motorized Window Blinds Drive",
+    "description": "Converts existing roller shades into scheduled smartphone-controlled blinds.",
+    "price": 79.99,
+    "stock": 80,
+    "category": "Smart Home",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-040.jpg"
+  },
+  {
+    "product_id": "prod-041",
+    "name": "Fast 65W GaN USB-C Wall Charger",
+    "description": "Ultra-compact Gallium Nitride 3-port fast wall charger for phones and laptops.",
+    "price": 34.99,
+    "stock": 87,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-041.jpg"
+  },
+  {
+    "product_id": "prod-042",
+    "name": "MagSafe Magnetic Wireless Power Bank 10000mAh",
+    "description": "Snap-on portable battery pack with 15W wireless charging and kickstand.",
+    "price": 45.99,
+    "stock": 94,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-042.jpg"
+  },
+  {
+    "product_id": "prod-043",
+    "name": "Braided Nylon USB-C to USB-C Cable 3-Pack",
+    "description": "High-durability 100W power delivery cables with reinforced metal connectors.",
+    "price": 19.99,
+    "stock": 101,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-043.jpg"
+  },
+  {
+    "product_id": "prod-044",
+    "name": "Universal Car Dashboard Phone Mount",
+    "description": "One-touch clamp car phone holder with 360-degree telescopic extendable arm.",
+    "price": 22.99,
+    "stock": 108,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-044.jpg"
+  },
+  {
+    "product_id": "prod-045",
+    "name": "Foldable 3-in-1 Wireless Charging Station",
+    "description": "Charges phone, smart watch, and wireless earbuds simultaneously.",
+    "price": 49.99,
+    "stock": 115,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-045.jpg"
+  },
+  {
+    "product_id": "prod-046",
+    "name": "Heavy Duty Shockproof Armor Phone Case",
+    "description": "Dual-layer military grade drop protection with raised screen bezel lips.",
+    "price": 24.99,
+    "stock": 122,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-046.jpg"
+  },
+  {
+    "product_id": "prod-047",
+    "name": "Tempered Glass Screen Protector 3-Pack",
+    "description": "9H hardness ultra-clear scratch resistant screen protectors with alignment tray.",
+    "price": 14.99,
+    "stock": 129,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-047.jpg"
+  },
+  {
+    "product_id": "prod-048",
+    "name": "Waterproof Floating Phone Pouch",
+    "description": "IPX8 certified underwater phone case with clear responsive touch window.",
+    "price": 12.99,
+    "stock": 136,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-048.jpg"
+  },
+  {
+    "product_id": "prod-049",
+    "name": "Portable Phone Ring Light Clip",
+    "description": "Rechargeable clip-on selfie ring light with 3 adjustable color temperatures.",
+    "price": 16.99,
+    "stock": 143,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-049.jpg"
+  },
+  {
+    "product_id": "prod-050",
+    "name": "High-Capacity 26800mAh Portable Power Station",
+    "description": "Airline approved massive capacity power bank with PD 60W bidirectional port.",
+    "price": 69.99,
+    "stock": 150,
+    "category": "Mobile Accessories",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-050.jpg"
+  },
+  {
+    "product_id": "prod-051",
+    "name": "Portable Rugged External SSD 1TB",
+    "description": "Drop resistant NVMe external drive delivering up to 1050MB/s transfer speeds.",
+    "price": 109.99,
+    "stock": 157,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-051.jpg"
+  },
+  {
+    "product_id": "prod-052",
+    "name": "Portable Rugged External SSD 2TB",
+    "description": "High capacity USB 3.2 Gen 2 portable solid state drive with hardware encryption.",
+    "price": 189.99,
+    "stock": 164,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-052.jpg"
+  },
+  {
+    "product_id": "prod-053",
+    "name": "Wi-Fi 6 Dual-Band Mesh Router System",
+    "description": "Whole home mesh coverage up to 4500 sq ft with OFDMA and low latency roaming.",
+    "price": 179.99,
+    "stock": 171,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-053.jpg"
+  },
+  {
+    "product_id": "prod-054",
+    "name": "High-Speed MicroSDXC Memory Card 256GB",
+    "description": "UHS-I U3 V30 memory card ideal for 4K video recording, drones, and consoles.",
+    "price": 29.99,
+    "stock": 178,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-054.jpg"
+  },
+  {
+    "product_id": "prod-055",
+    "name": "Internal NVMe M.2 PCIe 4.0 SSD 1TB",
+    "description": "Blazing read speeds up to 7300MB/s with aluminum heatsink for PCs and PS5.",
+    "price": 89.99,
+    "stock": 185,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-055.jpg"
+  },
+  {
+    "product_id": "prod-056",
+    "name": "8-Port Gigabit Ethernet Unmanaged Switch",
+    "description": "Plug-and-play desktop metal network switch with traffic prioritization QoS.",
+    "price": 27.99,
+    "stock": 192,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-056.jpg"
+  },
+  {
+    "product_id": "prod-057",
+    "name": "Wi-Fi 6E PCIe Desktop Adapter with Antennas",
+    "description": "Tri-band low-latency network card with Bluetooth 5.3 and magnetic antenna base.",
+    "price": 44.99,
+    "stock": 199,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-057.jpg"
+  },
+  {
+    "product_id": "prod-058",
+    "name": "Dual Bay External Hard Drive Docking Station",
+    "description": "Tool-free SATA to USB 3.0 enclosure with offline clone duplication button.",
+    "price": 39.99,
+    "stock": 206,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-058.jpg"
+  },
+  {
+    "product_id": "prod-059",
+    "name": "Enterprise 4-Bay Network Attached Storage (NAS)",
+    "description": "Quad-core cloud storage server with dual 2.5GbE ports and RAID data redundancy.",
+    "price": 499.99,
+    "stock": 213,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-059.jpg"
+  },
+  {
+    "product_id": "prod-060",
+    "name": "Ultra-Fast USB 3.2 Flash Drive 256GB",
+    "description": "Retractable metal thumb drive with up to 400MB/s read speeds for easy backup.",
+    "price": 32.99,
+    "stock": 220,
+    "category": "Storage & Networking",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-060.jpg"
+  },
+  {
+    "product_id": "prod-061",
+    "name": "Smart Fitness Tracker Band",
+    "description": "Slim health band monitoring heart rate, SpO2, sleep stages, and 30 workout modes.",
+    "price": 49.99,
+    "stock": 227,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-061.jpg"
+  },
+  {
+    "product_id": "prod-062",
+    "name": "GPS Smartwatch with AMOLED Display",
+    "description": "Built-in dual-frequency GPS with always-on vivid AMOLED screen and 14-day battery.",
+    "price": 199.99,
+    "stock": 234,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-062.jpg"
+  },
+  {
+    "product_id": "prod-063",
+    "name": "Smart Health Ring with Sleep Score",
+    "description": "Titanium lightweight finger ring tracking body temperature, HRV, and readiness.",
+    "price": 279.99,
+    "stock": 241,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-063.jpg"
+  },
+  {
+    "product_id": "prod-064",
+    "name": "Kids GPS Smart Safety Watch",
+    "description": "Two-way voice calling, SOS button, safe zones geo-fencing, and real-time tracking.",
+    "price": 89.99,
+    "stock": 248,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-064.jpg"
+  },
+  {
+    "product_id": "prod-065",
+    "name": "Rugged Outdoor GPS Multisport Watch",
+    "description": "Military standard 810G durability with topographic offline mapping and barometer.",
+    "price": 349.99,
+    "stock": 255,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-065.jpg"
+  },
+  {
+    "product_id": "prod-066",
+    "name": "Classic Hybrid Smartwatch",
+    "description": "Mechanical clock hands combined with hidden digital e-ink notification screen.",
+    "price": 149.99,
+    "stock": 262,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-066.jpg"
+  },
+  {
+    "product_id": "prod-067",
+    "name": "Smart Audio Bluetooth Sunglasses",
+    "description": "Polarized UV400 lenses with integrated open-ear directional speakers and mic.",
+    "price": 129.99,
+    "stock": 269,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-067.jpg"
+  },
+  {
+    "product_id": "prod-068",
+    "name": "Replacement Stainless Steel Watch Band",
+    "description": "Quick release metal mesh link strap compatible with standard 20mm/22mm lugs.",
+    "price": 24.99,
+    "stock": 276,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-068.jpg"
+  },
+  {
+    "product_id": "prod-069",
+    "name": "Wireless Magnetic Smartwatch Charger Cable",
+    "description": "Fast inductive charging cable with reinforced heat-dissipating magnetic connector.",
+    "price": 18.99,
+    "stock": 283,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-069.jpg"
+  },
+  {
+    "product_id": "prod-070",
+    "name": "Chest Strap Heart Rate Monitor",
+    "description": "Dual ANT+ and Bluetooth 5.0 ECG accuracy chest sensor for cycling and running.",
+    "price": 59.99,
+    "stock": 290,
+    "category": "Wearables",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-070.jpg"
+  },
+  {
+    "product_id": "prod-071",
+    "name": "Ergonomic Mesh Executive Chair",
+    "description": "Breathable high-back mesh chair with adjustable headrest and 3D lumbar support.",
+    "price": 279.99,
+    "stock": 297,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-071.jpg"
+  },
+  {
+    "product_id": "prod-072",
+    "name": "Electric Dual-Motor Standing Desk Frame",
+    "description": "Heavy duty motorized adjustable desk with 4 memory height presets and anti-collision.",
+    "price": 319.99,
+    "stock": 54,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-072.jpg"
+  },
+  {
+    "product_id": "prod-073",
+    "name": "Monitor Screenbar LED Desk Light",
+    "description": "Asymmetric optical design screenbar that illuminates desk without monitor glare.",
+    "price": 54.99,
+    "stock": 61,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-073.jpg"
+  },
+  {
+    "product_id": "prod-074",
+    "name": "Aluminum Dual Monitor Arm Mount",
+    "description": "Full motion gas spring articulating monitor arms supporting up to 32-inch displays.",
+    "price": 69.99,
+    "stock": 68,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-074.jpg"
+  },
+  {
+    "product_id": "prod-075",
+    "name": "Ergonomic Vertical Wireless Mouse",
+    "description": "Natural handshake ergonomic grip reducing wrist strain with silent click buttons.",
+    "price": 38.99,
+    "stock": 75,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-075.jpg"
+  },
+  {
+    "product_id": "prod-076",
+    "name": "Ergonomic Split Wave Wireless Keyboard",
+    "description": "Cushioned memory foam wrist rest with split curved keyframe layout.",
+    "price": 79.99,
+    "stock": 82,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-076.jpg"
+  },
+  {
+    "product_id": "prod-077",
+    "name": "Desk Cable Management Organizer Tray",
+    "description": "Under-desk heavy-duty steel wire basket for holding power strips and messy cords.",
+    "price": 29.99,
+    "stock": 89,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-077.jpg"
+  },
+  {
+    "product_id": "prod-078",
+    "name": "Felt Wool Desk Mat Blotter 36x18",
+    "description": "Premium soft felt wool desk protector pad adding warmth and elegance to your setup.",
+    "price": 22.99,
+    "stock": 96,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-078.jpg"
+  },
+  {
+    "product_id": "prod-079",
+    "name": "Adjustable Aluminum Laptop Riser",
+    "description": "Foldable ergonomic laptop stand with ventilation cooling slots for 10-17 inch devices.",
+    "price": 34.99,
+    "stock": 103,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-079.jpg"
+  },
+  {
+    "product_id": "prod-080",
+    "name": "Footrest Cushion with Washable Cover",
+    "description": "Teardrop ergonomic memory foam under-desk footrest promoting healthy sitting posture.",
+    "price": 28.99,
+    "stock": 110,
+    "category": "Office & Desk",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-080.jpg"
+  },
+  {
+    "product_id": "prod-081",
+    "name": "4K Ultra HD Streaming Webcam",
+    "description": "Ultra-sharp 4K 30fps webcam with dual noise-cancelling mics and privacy shutter.",
+    "price": 99.99,
+    "stock": 117,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-081.jpg"
+  },
+  {
+    "product_id": "prod-082",
+    "name": "Compact 4K Vlogging Mirrorless Camera",
+    "description": "Flip-out selfie touchscreen with fast autofocus and clean HDMI streaming output.",
+    "price": 699.99,
+    "stock": 124,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-082.jpg"
+  },
+  {
+    "product_id": "prod-083",
+    "name": "3-Axis Handheld Smartphone Gimbal",
+    "description": "AI face tracking stabilizer with built-in extendable selfie rod and tripod legs.",
+    "price": 119.99,
+    "stock": 131,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-083.jpg"
+  },
+  {
+    "product_id": "prod-084",
+    "name": "Professional Studio Microphone with Boom Arm",
+    "description": "Cardioid condenser USB microphone kit with shock mount and pop filter.",
+    "price": 89.99,
+    "stock": 138,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-084.jpg"
+  },
+  {
+    "product_id": "prod-085",
+    "name": "Bi-Color LED Video Key Light Panel",
+    "description": "Studio tabletop lighting with wireless remote, adjustable 2800K-6500K color temperature.",
+    "price": 79.99,
+    "stock": 145,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-085.jpg"
+  },
+  {
+    "product_id": "prod-086",
+    "name": "Portable Green Screen Backdrop",
+    "description": "Collapsible wrinkle-resistant chroma key panel with auto-locking pneumatic frame.",
+    "price": 64.99,
+    "stock": 152,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-086.jpg"
+  },
+  {
+    "product_id": "prod-087",
+    "name": "Action Camera 4K 60fps Waterproof",
+    "description": "Dual color screens with EIS 6-axis stabilization and 131ft underwater housing.",
+    "price": 199.99,
+    "stock": 159,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-087.jpg"
+  },
+  {
+    "product_id": "prod-088",
+    "name": "Heavy Duty Aluminum Camera Tripod",
+    "description": "360-degree fluid ball head tripod transforming into a versatile monopod.",
+    "price": 84.99,
+    "stock": 166,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-088.jpg"
+  },
+  {
+    "product_id": "prod-089",
+    "name": "Macro Ring Light Flash for Close-ups",
+    "description": "Continuous shadowless circular lighting attachment for detailed macro photography.",
+    "price": 49.99,
+    "stock": 173,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-089.jpg"
+  },
+  {
+    "product_id": "prod-090",
+    "name": "Wireless Lavalier Microphone System",
+    "description": "Dual transmitter lapel clip-on mics with 650ft range and noise cancellation chip.",
+    "price": 139.99,
+    "stock": 180,
+    "category": "Cameras & Video",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-090.jpg"
+  },
+  {
+    "product_id": "prod-091",
+    "name": "Digital Soldering Station Kit 65W",
+    "description": "Rapid heating ceramic core with OLED temperature display and precision tips.",
+    "price": 59.99,
+    "stock": 187,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-091.jpg"
+  },
+  {
+    "product_id": "prod-092",
+    "name": "Compact True-RMS Digital Multimeter",
+    "description": "Auto-ranging electrical tester with non-contact voltage NCV detection and backlight.",
+    "price": 39.99,
+    "stock": 194,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-092.jpg"
+  },
+  {
+    "product_id": "prod-093",
+    "name": "Precision Screwdriver Set 128-Piece",
+    "description": "CR-V steel magnetic bits for repairing phones, laptops, watches, and game consoles.",
+    "price": 29.99,
+    "stock": 201,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-093.jpg"
+  },
+  {
+    "product_id": "prod-094",
+    "name": "Benchtop DC Power Supply Variable 30V 5A",
+    "description": "Regulated switching power supply with 4-digit LED display and USB fast charging port.",
+    "price": 79.99,
+    "stock": 208,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-094.jpg"
+  },
+  {
+    "product_id": "prod-095",
+    "name": "Handheld Mini Cordless Air Duster",
+    "description": "High-velocity 100000 RPM compressed air blower replacing canned air for electronics.",
+    "price": 45.99,
+    "stock": 215,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-095.jpg"
+  },
+  {
+    "product_id": "prod-096",
+    "name": "Anti-Static ESD Work Mat Kit",
+    "description": "Heat-resistant silicone grounding mat with wrist strap for PCB component soldering.",
+    "price": 26.99,
+    "stock": 222,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-096.jpg"
+  },
+  {
+    "product_id": "prod-097",
+    "name": "Handheld Digital Thermal Camera",
+    "description": "Infrared thermal imaging camera for diagnosing PCB hotspots and electrical faults.",
+    "price": 289.99,
+    "stock": 229,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-097.jpg"
+  },
+  {
+    "product_id": "prod-098",
+    "name": "USB Power Meter Tester Multimeter",
+    "description": "Monitors real-time voltage, current, capacity, and fast-charging protocol detection.",
+    "price": 19.99,
+    "stock": 236,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-098.jpg"
+  },
+  {
+    "product_id": "prod-099",
+    "name": "Rotary Tool Multi-Tool Kit with 100 Accessories",
+    "description": "Variable speed rotary tool for detailed cutting, grinding, sanding, and engraving.",
+    "price": 49.99,
+    "stock": 243,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-099.jpg"
+  },
+  {
+    "product_id": "prod-100",
+    "name": "Electronic Component Starter Kit",
+    "description": "Comprehensive breadboard prototyping kit with LEDs, resistors, sensors, and jumper wires.",
+    "price": 34.99,
+    "stock": 250,
+    "category": "Electronics & Tools",
+    "image_url": "https://dtyopohp2smk7.cloudfront.net/images/products/prod-100.jpg"
+  }
+]
