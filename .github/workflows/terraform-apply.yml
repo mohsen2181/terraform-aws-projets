@@ -70,7 +70,7 @@ jobs:
 
       - name: Seed DynamoDB Product Catalog (if empty)
         run: |
-          cd ../../data
+          cd "$GITHUB_WORKSPACE/terraform-ecommerce/data"
           COUNT=$(aws dynamodb scan --table-name ecommerce-products --region ${{ env.AWS_REGION }} --select "COUNT" --query "Count" --output text 2>/dev/null || echo "0")
           echo "Current product count in DynamoDB: ${COUNT}"
           if [ "${COUNT}" -eq 0 ]; then
@@ -85,7 +85,7 @@ jobs:
         run: |
           ACCOUNT_ID="727742746869"
           BUCKET_NAME="ecommerce-frontend-${ACCOUNT_ID}"
-          cd ../../data
+          cd "$GITHUB_WORKSPACE/terraform-ecommerce/data"
           if [ -d "product-images" ]; then
             echo "Syncing product images to s3://${BUCKET_NAME}/images/products/..."
             aws s3 sync product-images/ "s3://${BUCKET_NAME}/images/products/" --region ${{ env.AWS_REGION }} --content-type "image/jpeg"
@@ -93,11 +93,10 @@ jobs:
 
       - name: Configure and Deploy Frontend SPA
         run: |
-          cd ../../scripts
-          chmod +x configure-frontend.sh
-          ./configure-frontend.sh
+          chmod +x "$GITHUB_WORKSPACE/terraform-ecommerce/scripts/configure-frontend.sh"
+          "$GITHUB_WORKSPACE/terraform-ecommerce/scripts/configure-frontend.sh"
           
-          cd ../frontend/react-app
+          cd "$GITHUB_WORKSPACE/terraform-ecommerce/frontend/react-app"
           npm ci
           npm run build
           
