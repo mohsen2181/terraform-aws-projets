@@ -51,7 +51,7 @@ jobs:
       - name: Sync Production Bundle to S3 & Invalidate CloudFront
         run: |
           ACCOUNT_ID="727742746869"
-          BUCKET_NAME="ecommerce-frontend-assets-${ACCOUNT_ID}"
+          BUCKET_NAME="ecommerce-frontend-${ACCOUNT_ID}"
           
           echo "Checking if S3 frontend bucket exists..."
           if aws s3 ls "s3://${BUCKET_NAME}" > /dev/null 2>&1; then
