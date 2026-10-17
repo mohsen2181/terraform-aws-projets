@@ -31,6 +31,9 @@ jobs:
         working-directory: terraform-ecommerce/environments/dev
 
     steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
       - name: Verify Confirmation Passphrase
         run: |
           if [ "${{ github.event.inputs.confirmation }}" != "destroy-ecommerce-production" ]; then
@@ -40,9 +43,6 @@ jobs:
             exit 1
           fi
           echo "✅ Confirmation passphrase verified. Proceeding with teardown..."
-
-      - name: Checkout Code
-        uses: actions/checkout@v4
 
       - name: Configure AWS Credentials via OIDC
         uses: aws-actions/configure-aws-credentials@v4
