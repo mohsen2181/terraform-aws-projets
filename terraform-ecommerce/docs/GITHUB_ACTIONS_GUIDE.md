@@ -82,6 +82,7 @@ The repository contains **5 specialized workflows** covering both CI (Continuous
 | **`terraform-apply.yml`** | CD | Merge to `main` (infra paths) | State locking, infrastructure apply, DynamoDB catalog seeding, image sync, frontend deploy |
 | **`frontend-ci.yml`** | CD | Merge to `main` (frontend paths) | Dynamic config injection, React build, S3 sync, image preservation, CloudFront purge |
 | **`microservices-ci.yml`** | CD | Merge to `main` (backend paths) | 4-way parallel Docker container builds, ECR push, ECS rolling deployment |
+| **`terraform-destroy.yml`**| CD | Manual `workflow_dispatch` only | Gated teardown with safety phrase verification, bucket purge, and full resource destruction |
 
 ---
 
@@ -193,6 +194,17 @@ graph TD
 4. **Image Push**: Pushes multi-tagged images to Amazon ECR.
 5. **Zero-Downtime ECS Rolling Rollout**:
    Runs `aws ecs update-service --cluster ecommerce-cluster --service ecommerce-<service> --force-new-deployment` to replace existing Fargate tasks with zero downtime.
+
+---
+
+### 🔴 6. Gated Teardown & Destroy (`terraform-destroy.yml`)
+- **Trigger**: Manual `workflow_dispatch` **only** (never triggers on git push or PR).
+- **Purpose**: Safely demolishes all provisioned AWS cloud infrastructure while protecting against accidental triggering.
+- **Safety Features**:
+  1. **Passphrase Protection**: The workflow requires the user to type `destroy-ecommerce-production` before execution begins. Any typo or mismatch aborts immediately.
+  2. **Concurrency Serialization**: Uses `concurrency: terraform-production-apply` to ensure a destroy cannot run at the same time an apply is running.
+  3. **Automatic S3 Bucket Purge**: Automatically empties static frontend assets and product images from `s3://ecommerce-frontend-727742746869` so S3 bucket deletion does not fail with "BucketNotEmpty" errors.
+  4. **State Preservation**: Updates the remote S3 state backend (`s3://ecommerce-tfstate-727742746869`) to 0 resources, leaving the audit trail intact.
 
 ---
 
