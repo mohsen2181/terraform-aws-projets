@@ -125,15 +125,16 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ApiGateway", "Count", "ApiId", var.api_gateway_id, { stat = "Sum", label = "Request Count", color = "#1f77b4" }],
-            [".", "4xx", ".", ".", { stat = "Sum", label = "4xx Client Errors", color = "#ff7f0e" }],
-            [".", "5xx", ".", ".", { stat = "Sum", label = "5xx Server Errors", color = "#d62728" }]
+            ["AWS/ApiGateway", "Count", "ApiId", var.api_gateway_id],
+            [".", "4xx", ".", "."],
+            [".", "5xx", ".", "."]
           ]
           view    = "timeSeries"
           stacked = false
           region  = var.aws_region
           title   = "API Gateway: Traffic & Error Rates"
           period  = 300
+          stat    = "Sum"
         }
       },
       {
@@ -144,16 +145,15 @@ resource "aws_cloudwatch_dashboard" "main" {
         height = 6
         properties = {
           metrics = [
-            ["AWS/ApiGateway", "Latency", "ApiId", var.api_gateway_id, { stat = "p50", label = "p50 Latency (ms)", color = "#2ca02c" }],
-            [".", ".", ".", ".", { stat = "p95", label = "p95 Latency (ms)", color = "#ff7f0e" }],
-            [".", ".", ".", ".", { stat = "p99", label = "p99 Latency (ms)", color = "#d62728" }],
-            [".", "IntegrationLatency", ".", ".", { stat = "Average", label = "ALB Backend Integration Latency (ms)", color = "#9467bd" }]
+            ["AWS/ApiGateway", "Latency", "ApiId", var.api_gateway_id],
+            [".", "IntegrationLatency", ".", "."]
           ]
           view    = "timeSeries"
           stacked = false
           region  = var.aws_region
-          title   = "API Gateway: Latency Percentiles"
+          title   = "API Gateway: Latency"
           period  = 300
+          stat    = "Average"
         }
       },
 
