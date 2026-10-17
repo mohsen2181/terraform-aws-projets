@@ -5,6 +5,7 @@ on:
     branches: [ "main" ]
     paths:
       - "terraform-ecommerce/frontend/**"
+      - "terraform-ecommerce/data/product-images/**"
       - ".github/workflows/frontend-ci.yml"
   workflow_dispatch:
 
@@ -32,6 +33,17 @@ jobs:
           cache: "npm"
           cache-dependency-path: "terraform-ecommerce/frontend/react-app/package-lock.json"
 
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Dynamically Configure aws-config.js
+        run: |
+          chmod +x terraform-ecommerce/scripts/configure-frontend.sh
+          terraform-ecommerce/scripts/configure-frontend.sh
+
       - name: Install Frontend Dependencies
         working-directory: terraform-ecommerce/frontend/react-app
         run: npm ci
@@ -42,13 +54,7 @@ jobs:
           CI: false
         run: npm run build
 
-      - name: Configure AWS Credentials via OIDC
-        uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
-          aws-region: ${{ env.AWS_REGION }}
-
-      - name: Sync Production Bundle to S3 & Invalidate CloudFront
+      - name: Sync Production Bundle and Images to S3 & Invalidate CloudFront
         run: |
           ACCOUNT_ID="727742746869"
           BUCKET_NAME="ecommerce-frontend-${ACCOUNT_ID}"
@@ -56,7 +62,12 @@ jobs:
           echo "Checking if S3 frontend bucket exists..."
           if aws s3 ls "s3://${BUCKET_NAME}" > /dev/null 2>&1; then
             echo "Syncing React build to s3://${BUCKET_NAME}..."
-            aws s3 sync terraform-ecommerce/frontend/react-app/build/ "s3://${BUCKET_NAME}/" --delete
+            aws s3 sync terraform-ecommerce/frontend/react-app/build/ "s3://${BUCKET_NAME}/"
+            
+            echo "Ensuring product images are synced to S3..."
+            if [ -d "terraform-ecommerce/data/product-images" ]; then
+              aws s3 sync terraform-ecommerce/data/product-images/ "s3://${BUCKET_NAME}/images/products/" --content-type "image/jpeg"
+            fi
             
             echo "Finding CloudFront distribution for ${BUCKET_NAME}..."
             DIST_ID=$(aws cloudfront list-distributions \

@@ -46,6 +46,11 @@ jobs:
         with:
           terraform_version: 1.8.5
 
+      - name: Setup Node.js (for frontend deployment)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
       - name: Prepare Lambda zip for hash check
         run: |
           mkdir -p ../../backend/order-processor
@@ -62,3 +67,52 @@ jobs:
 
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
+
+      - name: Seed DynamoDB Product Catalog (if empty)
+        run: |
+          cd ../../data
+          COUNT=$(aws dynamodb scan --table-name ecommerce-products --region ${{ env.AWS_REGION }} --select "COUNT" --query "Count" --output text 2>/dev/null || echo "0")
+          echo "Current product count in DynamoDB: ${COUNT}"
+          if [ "${COUNT}" -eq 0 ]; then
+            echo "Seeding DynamoDB products table..."
+            chmod +x load-products.sh
+            ./load-products.sh ${{ env.AWS_REGION }}
+          else
+            echo "DynamoDB table already contains ${COUNT} products. Skipping seeding."
+          fi
+
+      - name: Sync Product Images to S3
+        run: |
+          ACCOUNT_ID="727742746869"
+          BUCKET_NAME="ecommerce-frontend-${ACCOUNT_ID}"
+          cd ../../data
+          if [ -d "product-images" ]; then
+            echo "Syncing product images to s3://${BUCKET_NAME}/images/products/..."
+            aws s3 sync product-images/ "s3://${BUCKET_NAME}/images/products/" --region ${{ env.AWS_REGION }} --content-type "image/jpeg"
+          fi
+
+      - name: Configure and Deploy Frontend SPA
+        run: |
+          cd ../../scripts
+          chmod +x configure-frontend.sh
+          ./configure-frontend.sh
+          
+          cd ../frontend/react-app
+          npm ci
+          npm run build
+          
+          ACCOUNT_ID="727742746869"
+          BUCKET_NAME="ecommerce-frontend-${ACCOUNT_ID}"
+          echo "Syncing React build to s3://${BUCKET_NAME}..."
+          aws s3 sync build/ "s3://${BUCKET_NAME}/"
+          
+          echo "Finding CloudFront distribution for ${BUCKET_NAME}..."
+          DIST_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Origins.Items[?contains(DomainName, '${BUCKET_NAME}')]].Id | [0]" \
+            --output text)
+          
+          if [ -n "$DIST_ID" ] && [ "$DIST_ID" != "None" ]; then
+            echo "Creating CloudFront invalidation for distribution ${DIST_ID}..."
+            aws cloudfront create-invalidation --distribution-id "$DIST_ID" --paths "/*"
+            echo "CloudFront invalidation submitted successfully!"
+          fi
