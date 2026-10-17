@@ -92,6 +92,8 @@ jobs:
           fi
 
       - name: Configure and Deploy Frontend SPA
+        env:
+          CI: false
         run: |
           chmod +x "$GITHUB_WORKSPACE/terraform-ecommerce/scripts/configure-frontend.sh"
           "$GITHUB_WORKSPACE/terraform-ecommerce/scripts/configure-frontend.sh"
