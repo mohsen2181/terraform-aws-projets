@@ -1,0 +1,100 @@
+name: "Terraform Plan (PR Review)"
+
+on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "terraform-ecommerce/environments/**"
+      - "terraform-ecommerce/modules/**"
+      - ".github/workflows/terraform-plan.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+env:
+  AWS_REGION: us-east-1
+  ROLE_TO_ASSUME: arn:aws:iam::727742746869:role/github-actions-ecommerce-role
+
+jobs:
+  plan:
+    name: "Speculative Plan & Security Check"
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform-ecommerce/environments/dev
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive ../../
+
+      - name: Prepare Lambda zip for hash check
+        run: |
+          mkdir -p ../../backend/order-processor
+          touch ../../backend/order-processor/handler.py
+          cd ../../backend/order-processor && zip -q order_processor.zip handler.py
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        id: plan
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD || 'PlaceholderPlanPass123!' }}
+        run: |
+          terraform plan -no-color -out=tfplan > plan_output.txt
+          cat plan_output.txt
+
+      - name: Post Plan Summary to Pull Request
+        uses: actions/github-script@v7
+        if: github.event_name == 'pull_request'
+        with:
+          script: |
+            const fs = require('fs');
+            const planOutput = fs.readFileSync('terraform-ecommerce/environments/dev/plan_output.txt', 'utf8');
+            
+            // Extract the plan summary line (e.g. "Plan: X to add, Y to change, Z to destroy.")
+            const summaryMatch = planOutput.match(/Plan: \d+ to add, \d+ to change, \d+ to destroy/);
+            const summary = summaryMatch ? summaryMatch[0] : 'Plan generated successfully.';
+            
+            // Limit output to avoid exceeding GitHub comment character limit
+            const truncatedOutput = planOutput.length > 60000 
+              ? planOutput.substring(0, 60000) + '\n\n... (output truncated)' 
+              : planOutput;
+
+            const commentBody = `### 📋 Terraform Plan: ${summary}
+            *Triggered by commit: \`${context.sha.substring(0, 7)}\` by @${context.actor}*
+
+            <details><summary>Click to view full speculative plan</summary>
+
+            \`\`\`hcl
+            ${truncatedOutput}
+            \`\`\`
+
+            </details>`;
+
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: commentBody
+            });

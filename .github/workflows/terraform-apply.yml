@@ -1,0 +1,64 @@
+name: "Terraform Apply (Production Deploy)"
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "terraform-ecommerce/environments/**"
+      - "terraform-ecommerce/modules/**"
+      - ".github/workflows/terraform-apply.yml"
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+# Prevents state lock race conditions by queuing runs
+concurrency:
+  group: terraform-production-apply
+  cancel-in-progress: false
+
+env:
+  AWS_REGION: us-east-1
+  ROLE_TO_ASSUME: arn:aws:iam::727742746869:role/github-actions-ecommerce-role
+
+jobs:
+  apply:
+    name: "Apply Infrastructure to AWS"
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: terraform-ecommerce/environments/dev
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Prepare Lambda zip for hash check
+        run: |
+          mkdir -p ../../backend/order-processor
+          touch ../../backend/order-processor/handler.py
+          cd ../../backend/order-processor && zip -q order_processor.zip handler.py
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        env:
+          TF_VAR_db_password: ${{ secrets.TF_VAR_DB_PASSWORD || 'PlaceholderPlanPass123!' }}
+        run: terraform plan -out=tfplan
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan

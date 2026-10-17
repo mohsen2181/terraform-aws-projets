@@ -20,15 +20,17 @@ variable "db_password" {
   description = "Master password for PostgreSQL database"
   type        = string
   sensitive   = true
+  default     = "EcomSecurePass123!"
 }
 
 variable "domain_name" {
   description = "Primary root custom domain name"
   type        = string
+  default     = "mycloudhomelab.click"
 }
 
 variable "subdomains" {
   description = "List of subdomains for the frontend"
   type        = list(string)
-  default     = []
+  default     = ["www.mycloudhomelab.click", "ecommerce.mycloudhomelab.click"]
 }
