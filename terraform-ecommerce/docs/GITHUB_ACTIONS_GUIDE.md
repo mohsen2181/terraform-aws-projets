@@ -108,7 +108,67 @@ No passwords or access keys are saved anywhere in GitHub Secrets.
 
 ---
 
-## 4. Step-by-Step: How to Run the Workflows
+## 4. Workflow Execution Order & Lifecycle Dependencies
+
+Understanding the execution order of your workflows depends on whether you are deploying for the **first time (initial bootstrapping)** or performing **day-to-day feature development**:
+
+### A. Initial Deployment Order (From Scratch)
+
+When provisioning the eCommerce platform in a brand new AWS environment, the workflows follow a strict logical sequence:
+
+```
+┌─────────────────────────────────┐
+│  1. Terraform CI & Apply        │  Provisions VPC, RDS, S3, CloudFront, ECR & ECS
+└────────────────┬────────────────┘
+                 │ (Infrastructure is now live)
+                 ▼
+┌─────────────────────────────────┐
+│  2. Microservices CI/CD         │  Builds Docker images, pushes to ECR, rolls out ECS
+└────────────────┬────────────────┘
+                 │ (Backend APIs are live behind ALB)
+                 ▼
+┌─────────────────────────────────┐
+│  3. Frontend CI/CD              │  Builds React SPA, syncs to S3, invalidates CloudFront
+└─────────────────────────────────┘
+```
+
+1. **Step 1: Terraform CI & Provisioning (Infrastructure)**:
+   - **Must run first**: Terraform creates the foundational resources—including the 4 Amazon ECR repositories (`ecommerce/product-service`, etc.), the ECS cluster, the S3 static hosting bucket (`ecommerce-frontend-assets-...`), and the CloudFront distribution.
+   - If you run the frontend or microservices pipelines before Terraform finishes, they will fail because the destination S3 bucket or ECR repositories do not exist yet.
+2. **Step 2: Microservices CI/CD (Backend APIs)**:
+   - Builds the 4 microservices in parallel, pushes the Docker images to ECR, and triggers the ECS Fargate rolling deployment behind the Application Load Balancer.
+3. **Step 3: Frontend CI/CD (Client SPA)**:
+   - Compiles the React SPA, uploads static bundles to S3, and clears the CloudFront CDN cache. The frontend can now communicate with the healthy backend microservices.
+
+---
+
+### B. Day-to-Day Development Order (Path-Filtered & Independent)
+
+Once the infrastructure is up, workflows run **independently and automatically** using Git path filters:
+
+| Modified Path | Triggered Workflow | Behavior |
+| :--- | :--- | :--- |
+| `terraform-ecommerce/frontend/**` | **`Frontend CI/CD`** | Runs immediately (isolated from backend/Terraform) |
+| `terraform-ecommerce/backend/**` | **`Microservices CI/CD`** | Runs immediately (builds 4 containers in parallel) |
+| `terraform-ecommerce/modules/**` | **`Terraform CI`** | Runs immediately (validates syntax & format) |
+| `terraform-ecommerce/docs/**` | *None* | Skipped (preserves CI runner minutes) |
+
+> [!TIP]
+> **Why independence is best practice for microservices**:
+> A UI bug fix in React shouldn't have to wait 5 minutes for backend Docker containers or Terraform validation. Each component deploys as soon as its code changes.
+
+---
+
+### C. Manual Execution Order (Via GitHub UI)
+
+If you use the manual **"Run workflow"** (`workflow_dispatch`) button from the GitHub Actions dashboard, run them in this order:
+1. `Terraform CI`
+2. `Microservices CI/CD`
+3. `Frontend CI/CD`
+
+---
+
+## 5. Step-by-Step: How to Run the Workflows
 
 You have two primary ways to run these workflows:
 
@@ -170,7 +230,7 @@ You can run any workflow on demand without making any code changes:
 
 ---
 
-## 5. How to View Logs and Monitor Executions
+## 6. How to View Logs and Monitor Executions
 
 1. Go to the **Actions** tab on GitHub:
    `https://github.com/mohsen2181/terraform-aws-projets/actions`
@@ -181,7 +241,7 @@ You can run any workflow on demand without making any code changes:
 
 ---
 
-## 6. Summary Checklist
+## 7. Summary Checklist
 
 - [x] **Zero secrets stored**: AWS OIDC IAM Role configured with scoped trust policy.
 - [x] **Path filtering active**: Pipelines only run when relevant directories are modified.
