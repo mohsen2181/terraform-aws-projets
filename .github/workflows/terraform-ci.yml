@@ -39,6 +39,12 @@ jobs:
       - name: Terraform Format Check
         run: terraform fmt -check -recursive ../../
 
+      - name: Prepare Lambda zip for validation
+        run: |
+          mkdir -p ../../backend/order-processor
+          touch ../../backend/order-processor/handler.py
+          cd ../../backend/order-processor && zip -q order_processor.zip handler.py
+
       - name: Terraform Init
         run: terraform init -backend=false
 

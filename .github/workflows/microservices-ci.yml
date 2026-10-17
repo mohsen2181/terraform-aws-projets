@@ -70,6 +70,6 @@ jobs:
         run: |
           aws ecs update-service \
             --cluster ecommerce-cluster \
-            --service ${{ matrix.service.name }} \
+            --service ecommerce-${{ matrix.service.name }} \
             --force-new-deployment \
             --region ${{ env.AWS_REGION }} || echo "ECS cluster or service not yet active, skipping rollout."
