@@ -1,15 +1,15 @@
 const awsConfig = {
   Auth: {
     Cognito: {
-      userPoolId: 'us-east-1_nWt1uSTAM',
-      userPoolClientId: 'lm5jj6f7m4hl87netpks9hcsa',
+      userPoolId: 'us-east-1_QwHPg2g9F',
+      userPoolClientId: '2cjrn5mrtrqaa9rrl6ngkuhuep',
       loginWith: {
         email: true,
       },
     }
   },
   API: {
-    baseUrl: 'https://40o9tfnrsk.execute-api.us-east-1.amazonaws.com'
+    baseUrl: 'https://bwuhx1uh9j.execute-api.us-east-1.amazonaws.com'
   }
 };
 

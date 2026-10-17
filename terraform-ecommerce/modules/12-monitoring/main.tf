@@ -181,7 +181,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           }
           annotations = {
             horizontal = [
-              { label = "Auto-Scaling Threshold", value = 70, fill = "after", color = "#d62728" }
+              { label = "Auto-Scaling Threshold", value = 70, fill = "above", color = "#d62728" }
             ]
           }
         }
@@ -209,7 +209,7 @@ resource "aws_cloudwatch_dashboard" "main" {
           }
           annotations = {
             horizontal = [
-              { label = "Memory Threshold", value = 80, fill = "after", color = "#d62728" }
+              { label = "Memory Threshold", value = 80, fill = "above", color = "#d62728" }
             ]
           }
         }

@@ -255,7 +255,8 @@ resource "aws_appautoscaling_scheduled_action" "scale_down_night" {
   service_namespace  = aws_appautoscaling_target.ecs_target[each.key].service_namespace
   resource_id        = aws_appautoscaling_target.ecs_target[each.key].resource_id
   scalable_dimension = aws_appautoscaling_target.ecs_target[each.key].scalable_dimension
-  schedule           = var.scale_down_cron
+  schedule           = "cron(10 22 * * ? *)"
+  timezone           = "Europe/Paris"
 
   scalable_target_action {
     min_capacity = 0
