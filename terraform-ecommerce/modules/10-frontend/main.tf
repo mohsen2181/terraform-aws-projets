@@ -214,3 +214,25 @@ resource "aws_s3_bucket_policy" "frontend_policy" {
     ]
   })
 }
+
+# -------------------------------------------------------------
+# FinOps: S3 Lifecycle Rule for Cost Optimization
+# -------------------------------------------------------------
+resource "aws_s3_bucket_lifecycle_configuration" "frontend" {
+  bucket = aws_s3_bucket.frontend.id
+
+  rule {
+    id     = "expire-old-versions-and-abort-multipart"
+    status = "Enabled"
+
+    filter {}
+
+    abort_incomplete_multipart_upload {
+      days_after_initiation = 7
+    }
+
+    noncurrent_version_expiration {
+      noncurrent_days = 14
+    }
+  }
+}

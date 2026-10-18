@@ -72,11 +72,9 @@ jobs:
             const fs = require('fs');
             const planOutput = fs.readFileSync('terraform-ecommerce/environments/dev/plan_output.txt', 'utf8');
             
-            // Extract the plan summary line (e.g. "Plan: X to add, Y to change, Z to destroy.")
             const summaryMatch = planOutput.match(/Plan: \d+ to add, \d+ to change, \d+ to destroy/);
             const summary = summaryMatch ? summaryMatch[0] : 'Plan generated successfully.';
             
-            // Limit output to avoid exceeding GitHub comment character limit
             const truncatedOutput = planOutput.length > 60000 
               ? planOutput.substring(0, 60000) + '\n\n... (output truncated)' 
               : planOutput;
@@ -98,3 +96,26 @@ jobs:
               repo: context.repo.repo,
               body: commentBody
             });
+
+      - name: Setup Infracost
+        if: ${{ secrets.INFRACOST_API_KEY != '' }}
+        uses: infracost/actions/setup@v3
+        with:
+          api-key: ${{ secrets.INFRACOST_API_KEY }}
+
+      - name: Generate Infracost Cost Estimate
+        if: ${{ secrets.INFRACOST_API_KEY != '' }}
+        run: |
+          infracost breakdown --path=. \
+            --format=json \
+            --out-file=/tmp/infracost.json
+
+      - name: Post Infracost Comment to PR
+        if: ${{ secrets.INFRACOST_API_KEY != '' && github.event_name == 'pull_request' }}
+        run: |
+          infracost comment github \
+            --path=/tmp/infracost.json \
+            --repo=$GITHUB_REPOSITORY \
+            --github-token=${{ github.token }} \
+            --pull-request=${{ github.event.pull_request.number }} \
+            --behavior=update

@@ -176,3 +176,15 @@ module "monitoring" {
 
 
 
+
+# -------------------------------------------------------------
+# Module 13: FinOps, Budgets & Cost Governance
+# -------------------------------------------------------------
+module "finops" {
+  source = "../../modules/13-finops"
+
+  budget_name         = "${var.project_name}-monthly-budget"
+  budget_amount       = "25.0"
+  notification_emails = ["admin@mycloudhomelab.click"]
+  alarm_threshold     = 20
+}

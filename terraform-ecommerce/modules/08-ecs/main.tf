@@ -168,7 +168,11 @@ resource "aws_ecs_service" "services" {
   cluster         = aws_ecs_cluster.cluster.id
   task_definition = aws_ecs_task_definition.tasks[each.key].arn
   desired_count   = 1
-  launch_type     = "FARGATE"
+  capacity_provider_strategy {
+    capacity_provider = "FARGATE_SPOT"
+    weight            = 100
+    base              = 0
+  }
 
   network_configuration {
     subnets          = var.private_app_subnet_ids
@@ -276,5 +280,20 @@ resource "aws_appautoscaling_scheduled_action" "scale_up_morning" {
   scalable_target_action {
     min_capacity = var.min_capacity
     max_capacity = var.max_capacity
+  }
+}
+
+# -------------------------------------------------------------
+# FinOps: Fargate Spot Capacity Providers (Up to 70% Discount)
+# -------------------------------------------------------------
+resource "aws_ecs_cluster_capacity_providers" "cluster" {
+  cluster_name = aws_ecs_cluster.cluster.name
+
+  capacity_providers = ["FARGATE", "FARGATE_SPOT"]
+
+  default_capacity_provider_strategy {
+    base              = 0
+    weight            = 100
+    capacity_provider = "FARGATE_SPOT"
   }
 }

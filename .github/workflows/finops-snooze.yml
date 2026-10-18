@@ -1,0 +1,85 @@
+name: "FinOps: Scheduled Auto-Snooze & Wakeup"
+
+on:
+  schedule:
+    # Snooze Monday to Friday at 20:00 UTC (8:00 PM)
+    - cron: "0 20 * * 1-5"
+    # Wakeup Monday to Friday at 08:00 UTC (8:00 AM)
+    - cron: "0 8 * * 1-5"
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "Choose action:"
+        required: true
+        type: choice
+        options:
+          - snooze
+          - wake
+        default: snooze
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AWS_REGION: us-east-1
+  ROLE_TO_ASSUME: arn:aws:iam::727742746869:role/github-actions-ecommerce-role
+  CLUSTER_NAME: ecommerce-cluster
+
+jobs:
+  manage-capacity:
+    name: "Scale ECS Workloads (FinOps)"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS Credentials via OIDC
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ env.ROLE_TO_ASSUME }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Determine Action (Cron vs Manual)
+        id: action-picker
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            SELECTED_ACTION="${{ github.event.inputs.action }}"
+          else
+            CURRENT_HOUR=$(date -u +%H)
+            if [ "$CURRENT_HOUR" -ge 18 ]; then
+              SELECTED_ACTION="snooze"
+            else
+              SELECTED_ACTION="wake"
+            fi
+          fi
+          echo "Selected FinOps action: ${SELECTED_ACTION}"
+          echo "ACTION=${SELECTED_ACTION}" >> "$GITHUB_OUTPUT"
+
+      - name: Apply ECS Desired Capacity
+        run: |
+          ACTION="${{ steps.action-picker.outputs.ACTION }}"
+          if [ "$ACTION" == "snooze" ]; then
+            TARGET_COUNT=0
+            echo "🌙 SNOOZE: Scaling ECS services to 0 to save compute costs..."
+          else
+            TARGET_COUNT=1
+            echo "☀️ WAKEUP: Scaling ECS services to 1 to restore traffic..."
+          fi
+
+          SERVICES=$(aws ecs list-services --cluster "${{ env.CLUSTER_NAME }}" --query "serviceArns[]" --output text 2>/dev/null || echo "")
+          
+          if [ -z "$SERVICES" ]; then
+            echo "No active ECS services found in cluster ${{ env.CLUSTER_NAME }}."
+            exit 0
+          fi
+
+          for SVC_ARN in $SERVICES; do
+            SVC_NAME=$(basename "$SVC_ARN")
+            echo "Setting desired-count=${TARGET_COUNT} for service: ${SVC_NAME}..."
+            aws ecs update-service \
+              --cluster "${{ env.CLUSTER_NAME }}" \
+              --service "$SVC_NAME" \
+              --desired-count "$TARGET_COUNT" \
+              --query "service.serviceName" --output text
+          done
+
+          echo "✅ Capacity update complete. Target desired count is now ${TARGET_COUNT} for all services."
