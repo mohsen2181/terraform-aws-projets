@@ -65,9 +65,14 @@ jobs:
             aws s3 sync terraform-ecommerce/frontend/react-app/build/ "s3://${BUCKET_NAME}/"
             
             echo "Ensuring product images are synced to S3..."
-            if [ -d "terraform-ecommerce/data/product-images" ]; then
-              aws s3 sync terraform-ecommerce/data/product-images/ "s3://${BUCKET_NAME}/images/products/" --content-type "image/jpeg"
+            cd terraform-ecommerce/data
+            if [ ! -d "product-images" ] || [ $(ls product-images 2>/dev/null | wc -l) -lt 100 ]; then
+              echo "Downloading 100 sample product images..."
+              chmod +x download-product-images.sh
+              ./download-product-images.sh
             fi
+            aws s3 sync product-images/ "s3://${BUCKET_NAME}/images/products/" --content-type "image/jpeg"
+            cd "$GITHUB_WORKSPACE" 
             
             echo "Finding CloudFront distribution for ${BUCKET_NAME}..."
             DIST_ID=$(aws cloudfront list-distributions \

@@ -86,10 +86,14 @@ jobs:
           ACCOUNT_ID="727742746869"
           BUCKET_NAME="ecommerce-frontend-${ACCOUNT_ID}"
           cd "$GITHUB_WORKSPACE/terraform-ecommerce/data"
-          if [ -d "product-images" ]; then
-            echo "Syncing product images to s3://${BUCKET_NAME}/images/products/..."
-            aws s3 sync product-images/ "s3://${BUCKET_NAME}/images/products/" --region ${{ env.AWS_REGION }} --content-type "image/jpeg"
+          if [ ! -d "product-images" ] || [ $(ls product-images 2>/dev/null | wc -l) -lt 100 ]; then
+            echo "Downloading 100 sample product images..."
+            chmod +x download-product-images.sh
+            ./download-product-images.sh
           fi
+          echo "Syncing product images to s3://${BUCKET_NAME}/images/products/..."
+          aws s3 sync product-images/ "s3://${BUCKET_NAME}/images/products/" --region ${{ env.AWS_REGION }} --content-type "image/jpeg"
+          echo "Verified $(aws s3 ls "s3://${BUCKET_NAME}/images/products/" | wc -l) product images in S3." 
 
       - name: Configure and Deploy Frontend SPA
         env:
