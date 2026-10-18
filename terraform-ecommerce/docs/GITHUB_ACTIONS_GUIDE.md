@@ -1,6 +1,6 @@
 # GitHub Actions CI/CD Complete Guide: AWS eCommerce Platform
 
-Welcome to your production-grade GitHub Actions CI/CD setup! This guide explains how every pipeline works under the hood, how AWS OpenID Connect (OIDC) authenticates without static passwords, and the step-by-step instructions for continuous integration (CI) and continuous deployment (CD).
+Welcome to your production-grade GitHub Actions CI/CD setup! This guide explains how every pipeline works under the hood, how AWS OpenID Connect (OIDC) authenticates without static passwords, and the step-by-step instructions for continuous integration (CI), continuous deployment (CD), automated teardown, and enterprise **FinOps (Financial Engineering)** cost controls.
 
 ---
 
@@ -11,10 +11,13 @@ GitHub Actions is an **event-driven GitOps automation engine** hosted directly w
 ```mermaid
 graph TD
     subgraph GitOps Workflow
-        PR[Pull Request opened] -->|Speculative Plan| PlanWF["terraform-plan.yml<br/>(PR Comment Bot)"]
+        PR[Pull Request opened] -->|Speculative Plan + Infracost| PlanWF["terraform-plan.yml<br/>(PR Comment Bot)"]
         Merge[Merge to main] -->|Production Apply| ApplyWF["terraform-apply.yml<br/>(Infra CD + Auto-Seed)"]
         FePush[Frontend Push] -->|Client CD| FeWF["frontend-ci.yml<br/>(React Build & CDN Sync)"]
         BePush[Backend Push] -->|Microservices CD| BeWF["microservices-ci.yml<br/>(4x Matrix ECR & ECS)"]
+        SnoozeCron[Cron: 20:00 UTC] -->|Auto-Snooze to 0| SnoozeWF["finops-snooze.yml<br/>(ECS Scale Down)"]
+        WakeCron[Cron: 08:00 UTC] -->|Auto-Wake to 1| SnoozeWF
+        ManualDestroy[Manual Gated Dispatch] -->|Passphrase Protected| DestroyWF["terraform-destroy.yml<br/>(Clean Teardown)"]
     end
 
     subgraph AWS Cloud Deployment
@@ -23,19 +26,21 @@ graph TD
         ApplyWF -->|Data Seed| DDB["DynamoDB (ecommerce-products: 100 items)"]
         ApplyWF -->|Image Sync| S3Img["S3 (images/products/*.jpg)"]
         ApplyWF -->|Frontend Build| S3Fe["S3 Frontend Bucket + CloudFront CDN"]
+        ApplyWF -->|FinOps Module| FinOpsAWS["AWS Budgets ($25) + Billing Alarm ($20)"]
         FeWF -->|Dynamic Config & Assets| S3Fe
         BeWF -->|Docker Images| ECR["Amazon ECR (4 Repos)"]
-        BeWF -->|Rolling Rollout| ECS["ECS Fargate Services"]
+        BeWF -->|Rolling Rollout| ECS["ECS Fargate Spot (70% Savings)"]
+        SnoozeWF -->|Scale Desired Count| ECS
     end
 ```
 
 ### Key Terminology
 1. **Workflow**: An automated configurable procedure defined in a `.yml` file under `.github/workflows/`.
-2. **Event (`on:`)**: The trigger that tells GitHub when to run the workflow (`push`, `pull_request`, `workflow_dispatch`).
+2. **Event (`on:`)**: The trigger that tells GitHub when to run the workflow (`push`, `pull_request`, `schedule`, `workflow_dispatch`).
 3. **Path Filtering (`paths:`)**: Ensures workflows only execute when relevant code changes. For example, editing frontend CSS won't waste runner minutes rebuilding backend Docker containers or running Terraform.
 4. **Runner (`runs-on: ubuntu-latest`)**: A clean, isolated Virtual Machine in GitHub's cloud.
 5. **Permissions (`permissions:`)**: Controls token capabilities. We set `id-token: write` so GitHub can issue cryptographically signed JWT tokens for AWS OIDC.
-6. **Concurrency (`concurrency:`)**: Prevents race conditions. For Terraform, `concurrency: terraform-production-apply` ensures apply operations queue sequentially and never clash on state locks.
+6. **Concurrency (`concurrency:`)**: Prevents race conditions. For Terraform, `concurrency: terraform-production-apply` ensures apply and destroy operations queue sequentially and never clash on state locks.
 
 ---
 
@@ -49,94 +54,31 @@ Traditional CI/CD required storing static AWS IAM Access Keys (`AKIA...` and Sec
 > - If accidentally leaked in logs or public commits, attackers gain full access to your AWS account.
 > - Difficult to audit which specific commit or pipeline used which key.
 
-### The Modern Standard: AWS OpenID Connect (OIDC)
-Our setup uses **Zero-Secret OIDC**:
-```
-GitHub Actions Runner                      AWS IAM / STS
-       |                                          |
-       | 1. Generates signed JWT token            |
-       |----------------------------------------->|
-       |                                          | 2. Validates:
-       |                                          |    - Issuer: token.actions.githubusercontent.com
-       |                                          |    - Audience: sts.amazonaws.com
-       |                                          |    - Subject: repo:mohsen2181/terraform-aws-projets:*
-       |                                          |
-       | 3. Returns temporary 15-min credentials |
-       |<-----------------------------------------|
-       |                                          |
-(Uses temp credentials for Terraform / S3 / ECR / ECS commands)
-```
-
-No AWS access keys or passwords are stored anywhere in GitHub Secrets.
+### How OpenID Connect (OIDC) Solves This
+With OpenID Connect (OIDC), **zero AWS credentials** are stored in GitHub:
+1. When a workflow starts, GitHub's internal OIDC provider generates a short-lived JSON Web Token (JWT) signed by GitHub's private key.
+2. The GitHub Actions runner presents this JWT to the AWS STS (Security Token Service) endpoint using `aws-actions/configure-aws-credentials@v4`.
+3. AWS STS inspects the token, validates GitHub's public certificate, and checks the IAM Role's **Trust Policy**:
+   - Matches Issuer: `https://token.actions.githubusercontent.com`
+   - Matches Audience: `sts.amazonaws.com`
+   - Matches Subject: `repo:mohsen2181/terraform-aws-projets:ref:refs/heads/main` (or pull request).
+4. If verified, AWS STS returns temporary credentials (valid for 1 hour) directly in runner memory.
 
 ---
 
-## 3. Workflow Breakdown & Detailed CD Steps
+## 3. Workflow Catalog & Pipeline Anatomy
 
-The repository contains **5 specialized workflows** covering both CI (Continuous Integration) and CD (Continuous Deployment):
-
-| Workflow File | Type | Trigger | Purpose |
-| :--- | :---: | :--- | :--- |
-| **`terraform-ci.yml`** | CI | PR / Push to `modules/**` | Formatting checks, dynamic Lambda packaging, `terraform validate` |
-| **`terraform-plan.yml`** | CI | PR to `main` | Speculative plan generation and automated PR commenting |
-| **`terraform-apply.yml`** | CD | Merge to `main` (infra paths) | State locking, infrastructure apply, DynamoDB catalog seeding, image sync, frontend deploy |
-| **`frontend-ci.yml`** | CD | Merge to `main` (frontend paths) | Dynamic config injection, React build, S3 sync, image preservation, CloudFront purge |
-| **`microservices-ci.yml`** | CD | Merge to `main` (backend paths) | 4-way parallel Docker container builds, ECR push, ECS rolling deployment |
-| **`terraform-destroy.yml`**| CD | Manual `workflow_dispatch` only | Gated teardown with safety phrase verification, bucket purge, and full resource destruction |
+### 🟡 1. Speculative Terraform Plan & Cost Bot (`terraform-plan.yml`)
+- **Trigger**: Every Pull Request touching `terraform-ecommerce/**` or `.github/workflows/terraform-plan.yml`.
+- **Purpose**: Runs `terraform plan` safely in read-only mode, runs **Infracost** to calculate monthly cost differences, and posts an interactive breakdown directly to the PR comments.
 
 ---
 
-### 🟢 1. Terraform CI (`terraform-ci.yml`)
-- **Trigger**: Changes inside `terraform-ecommerce/environments/**` or `terraform-ecommerce/modules/**`.
-- **Purpose**: Fast feedback loop ensuring Terraform code is properly formatted and syntactically valid before PR review.
-- **Detailed Steps**:
-  1. `actions/checkout@v4`: Clones repository code to the runner.
-  2. `hashicorp/setup-terraform@v3`: Installs Terraform `1.8.5`.
-  3. `terraform fmt -check -recursive`: Fails if code does not adhere to canonical formatting.
-  4. **Dynamic Lambda Zip Packaging**: Generates a dummy `order_processor.zip` handler so that Terraform's `filebase64sha256()` check succeeds without storing binary archives in git.
-  5. `terraform init -backend=false`: Initializes providers without requiring remote state backend access.
-  6. `terraform validate`: Validates all module arguments, variable types, and resource syntax.
+### 🟢 2. Production Terraform Apply & Auto-Seed (`terraform-apply.yml`)
+- **Trigger**: Direct push or merged PR to `main` touching `terraform-ecommerce/**`.
+- **Purpose**: Fully automated deployment of all 13 Terraform modules, DynamoDB seeding, S3 product image sync, and frontend React compilation.
 
----
-
-### 🟡 2. Speculative Terraform Plan (`terraform-plan.yml`)
-- **Trigger**: Pull Requests opened or updated against `main` affecting Terraform files.
-- **Purpose**: Provides visibility into exact infrastructure changes before code is merged.
-- **Detailed Steps**:
-  1. Authenticates to AWS via OIDC assuming role `github-actions-ecommerce-role`.
-  2. Initializes Terraform with remote S3 backend:
-     `s3://ecommerce-tfstate-727742746869/dev/terraform.tfstate`
-  3. Runs `terraform plan -no-color` to compute the execution diff.
-  4. Formats the plan into an organized GitHub markdown comment.
-  5. Uses `actions/github-script@v7` to find existing bot comments on the PR and update them in-place with the latest plan summary.
-
----
-
-### 🚀 3. Terraform Production Apply CD (`terraform-apply.yml`)
-- **Trigger**: Merges to `main` affecting `environments/**`, `modules/**`, or manual `workflow_dispatch`.
-- **Purpose**: Automatically applies infrastructure changes, seeds baseline database records, synchronizes assets, and brings the storefront live.
-- **Concurrency Guard**:
-  ```yaml
-  concurrency:
-    group: terraform-production-apply
-    cancel-in-progress: false
-  ```
-  Queues executions so that multiple merges never conflict on the DynamoDB state lock.
-
-#### Detailed CD Steps:
-```mermaid
-graph TD
-    S1[1. Checkout & AWS OIDC Auth] --> S2[2. Setup Terraform & Node.js 18]
-    S2 --> S3[3. Lambda Dummy Archive Staging]
-    S3 --> S4[4. terraform init with S3 & DynamoDB Lock]
-    S4 --> S5[5. terraform plan -out=tfplan]
-    S5 --> S6[6. terraform apply -auto-approve tfplan]
-    S6 --> S7[7. Automated DynamoDB Product Seeding]
-    S7 --> S8[8. Product Images Sync to S3]
-    S8 --> S9[9. Dynamic Frontend Config & Build]
-    S9 --> S10[10. S3 Sync & CloudFront Invalidation]
-```
-
+#### Detailed Deployment Sequence:
 1. **OIDC Authentication**: Authenticates with AWS using the dedicated GitHub Actions IAM role.
 2. **Toolchain Setup**: Installs Terraform `1.8.5` and Node.js `18`.
 3. **Lambda Packaging**: Staged archive generation for `order_processor.zip`.
@@ -150,6 +92,7 @@ graph TD
    - If empty (`COUNT == 0`), runs `load-products.sh` to populate all 100 products from `products.json` with categories, prices, stock levels, and CDN image URLs.
    - If products already exist, skips seeding automatically to preserve live data.
 8. **Product Images Synchronization**:
+   - Checks if `product-images/` exists or has fewer than 100 images; if so, automatically triggers `download-product-images.sh` to fetch 100 high-res sample images from Unsplash.
    - Synchronizes `terraform-ecommerce/data/product-images/` to `s3://ecommerce-frontend-727742746869/images/products/` with `--content-type "image/jpeg"`.
 9. **Dynamic Frontend Configuration & Build**:
    - Executes `configure-frontend.sh` to extract the fresh API Gateway base URL and Cognito User Pool ID from Terraform outputs.
@@ -157,28 +100,28 @@ graph TD
    - Installs dependencies (`npm ci`) and builds the React production bundle (`CI=false npm run build`).
 10. **Storefront Sync & CloudFront CDN Invalidation**:
     - Syncs the React build directory to `s3://ecommerce-frontend-727742746869/`.
-    - Automatically discovers the CloudFront distribution ID.
+    - Automatically discovers the active CloudFront distribution ID (`E1AGV3AGUR46Y6`).
     - Issues `aws cloudfront create-invalidation --paths "/*"` so edge locations worldwide immediately serve the latest storefront and catalog.
 
 ---
 
-### 🟣 4. Frontend Application CD (`frontend-ci.yml`)
+### 🟣 3. Frontend Application CD (`frontend-ci.yml`)
 - **Trigger**: Changes inside `terraform-ecommerce/frontend/**` or `terraform-ecommerce/data/product-images/**`.
-- **Purpose**: Independent, rapid client-side CI/CD pipeline for React web development.
+- **Purpose**: Independent, rapid client-side CI/CD pipeline for React web development (~1m 15s).
 
 #### Detailed CD Steps:
 1. **Dependency Installation**: Runs `npm ci` with GitHub npm cache enabled.
 2. **Dynamic Endpoint Injection**: Executes `configure-frontend.sh` to query live Terraform outputs or AWS SSM/Cognito/API Gateway fallback values before compilation.
 3. **Optimized Production Build**: Runs `npm run build` with `CI: false` to generate production HTML, JS, CSS, and media chunks.
 4. **S3 Static Asset Sync**: Syncs `build/` to `s3://ecommerce-frontend-727742746869/`.
-5. **Catalog Image Preservation**: Synchronizes `terraform-ecommerce/data/product-images/` to `s3://ecommerce-frontend-727742746869/images/products/`, ensuring UI updates never delete catalog image assets.
-6. **CloudFront Cache Purge**: Discovers distribution `E1A891VBTZ3J0M` and submits invalidation for `/*`.
+5. **Catalog Image Preservation**: Automatically verifies `product-images/` (downloading missing images if needed) and synchronizes to `s3://ecommerce-frontend-727742746869/images/products/`.
+6. **CloudFront Cache Purge**: Discovers distribution ID dynamically and submits invalidation for `/*`.
 
 ---
 
-### 🔵 5. Microservices CD (`microservices-ci.yml`)
+### 🔵 4. Microservices CD (`microservices-ci.yml`)
 - **Trigger**: Changes inside `terraform-ecommerce/backend/**`.
-- **Purpose**: Builds Docker images for all 4 microservices simultaneously, pushes them to Amazon ECR, and triggers zero-downtime rolling replacement in ECS Fargate.
+- **Purpose**: Builds Docker images for all 4 microservices simultaneously, pushes them to Amazon ECR, and triggers zero-downtime rolling replacement in ECS Fargate Spot.
 
 #### Detailed CD Steps:
 1. **Parallel Matrix Strategy**:
@@ -194,6 +137,15 @@ graph TD
 4. **Image Push**: Pushes multi-tagged images to Amazon ECR.
 5. **Zero-Downtime ECS Rolling Rollout**:
    Runs `aws ecs update-service --cluster ecommerce-cluster --service ecommerce-<service> --force-new-deployment` to replace existing Fargate tasks with zero downtime.
+
+---
+
+### 🌙 5. Nightly Auto-Snooze & Wakeup (`finops-snooze.yml`)
+- **Trigger**:
+  - **Auto-Snooze Schedule**: Cron `0 20 * * 1-5` (Mon-Fri at 20:00 UTC) $\to$ Scales ECS to `0`.
+  - **Auto-Wake Schedule**: Cron `0 8 * * 1-5` (Mon-Fri at 08:00 UTC) $\to$ Scales ECS to `1`.
+  - **Manual Dispatch (`workflow_dispatch`)**: Allows manually selecting `action: snooze` or `action: wake`.
+- **Purpose**: Powers down ECS containers during non-business hours and weekends, achieving **~65% compute cost savings** without destroying infrastructure.
 
 ---
 
@@ -219,11 +171,76 @@ Day-to-Day Maintenance (Isolated & Fast):
   • Frontend edit    ──► Triggers ONLY frontend-ci.yml (~1m 15s)
   • Microservice edit ──► Triggers ONLY microservices-ci.yml (~2m)
   • Terraform edit   ──► PR triggers terraform-plan.yml, Merge triggers terraform-apply.yml
+  • Off-Hours FinOps ──► Automated snooze/wake via finops-snooze.yml
 ```
 
 ---
 
-## 5. How to Run and Test Workflows
+## 5. FinOps: Financial Engineering & Cost Optimization
+
+Our eCommerce platform integrates **4 core FinOps mechanisms** spanning infrastructure-as-code, architectural discounts, scheduling automation, and pull-request shift-left cost modeling:
+
+```mermaid
+graph TD
+    subgraph FinOps Ecosystem
+        F1["1. AWS Budgets & Billing Alarm<br/>($25/mo cap + alerts)"]
+        F2["2. Fargate Spot Architecture<br/>(70% compute discount)"]
+        F3["3. S3 Lifecycle Management<br/>(14-day noncurrent expiry)"]
+        F4["4. Scheduled Snooze Cron<br/>(65% off-hours savings)"]
+        F5["5. Infracost Shift-Left<br/>(PR cost breakdown bot)"]
+    end
+```
+
+### Feature 1: AWS Budgets & CloudWatch Billing Alarm
+* **Module**: `terraform-ecommerce/modules/13-finops/`
+* **Resources**:
+  - `aws_budgets_budget.cost_budget`: Enforces a hard **$25.00/month** spending cap.
+    - Alert 1 (Actual Spend): Fires when month-to-date actual charges cross **80% ($20.00)**.
+    - Alert 2 (Forecasted Spend): Fires if AWS Machine Learning predicts monthly charges will cross **100% ($25.00)**.
+  - `aws_cloudwatch_metric_alarm.billing_alarm`: Monitors CloudWatch metric `EstimatedCharges` in `us-east-1` with a **$20.00** threshold, sending alerts to an SNS topic.
+
+### Feature 2: Fargate Spot Compute Optimization
+* **Module**: `terraform-ecommerce/modules/08-ecs/main.tf`
+* **Mechanism**:
+  - Added `aws_ecs_cluster_capacity_providers` configuring `FARGATE_SPOT` with 100% weight.
+  - Replaced standard On-Demand Fargate with `capacity_provider_strategy`.
+* **Savings**: Fargate Spot utilizes spare AWS capacity at up to a **70% discount** compared to regular Fargate pricing.
+
+### Feature 3: S3 Storage Lifecycle Hygiene
+* **Module**: `terraform-ecommerce/modules/10-frontend/main.tf`
+* **Mechanism**:
+  - `aws_s3_bucket_lifecycle_configuration` attached to `ecommerce-frontend-727742746869`.
+  - Non-current file versions expire and are deleted after **14 days**.
+  - Incomplete multipart uploads are aborted and removed after **7 days**.
+* **Benefit**: Eliminates "zombie" storage costs caused by repeated frontend builds and media uploads.
+
+### Feature 4: Nightly Auto-Snooze & Wakeup Workflow
+* **Workflow**: `.github/workflows/finops-snooze.yml`
+* **Mechanism**:
+  - Auto-snoozes all 4 ECS services (`desired_count = 0`) at 20:00 UTC Monday–Friday.
+  - Auto-wakes all 4 ECS services (`desired_count = 1`) at 08:00 UTC Monday–Friday.
+* **Savings**:
+  - 168 hours/week (24/7 continuous run) $\to$ ~60 hours/week (business hours).
+  - **~65% reduction in compute hours**.
+
+### Feature 5: Infracost Shift-Left PR Cost Estimator
+* **Workflow**: `.github/workflows/terraform-plan.yml`
+* **Mechanism**:
+  - On every Pull Request, Infracost calculates the monthly cost delta of proposed infrastructure changes.
+  - Posts an automated markdown table to the PR comment thread before code is merged.
+  - Guarded with `if: ${{ secrets.INFRACOST_API_KEY != '' }}` so builds remain green even if the optional secret is not set.
+
+### 💰 Total Estimated Cost Impact
+
+| Category | Baseline Cost (On-Demand 24/7) | Optimized Cost (FinOps Active) | Monthly Savings |
+| :--- | :--- | :--- | :--- |
+| **ECS Microservices Compute** | ~$48.00/mo | ~$5.76/mo (Spot + Snooze) | **~88% compute savings** |
+| **S3 Storage & Multi-Versions** | ~$2.50/mo | ~$0.30/mo (Lifecycle rule) | **~88% storage savings** |
+| **Budget Safety Net** | Unlimited runaway risk | **Capped at $25.00/mo** | **100% overrun protection** |
+
+---
+
+## 6. How to Run and Test Workflows
 
 ### Method A: Automated via Git Push (Standard Development)
 ```bash
@@ -242,13 +259,16 @@ git push origin main
 
 ### Method B: Manual Trigger via GitHub UI (`workflow_dispatch`)
 1. Navigate to: 👉 **`https://github.com/mohsen2181/terraform-aws-projets/actions`**
-2. In the left sidebar, click the target workflow (e.g. **"Terraform Apply (Production Deploy)"**).
+2. In the left sidebar, click the target workflow:
+   - **Terraform Apply (Production Deploy)**: Re-provisions and updates the cloud environment.
+   - **FinOps ECS Auto-Snooze & Wakeup**: Select `action: snooze` or `action: wake`.
+   - **Terraform Destroy (Infrastructure Teardown)**: Demolishes cloud infrastructure (requires typing confirmation passphrase).
 3. Click the **"Run workflow"** button on the right side.
 4. Select **Branch: main** and click **Run workflow**.
 
 ---
 
-## 6. How to Monitor Logs & Troubleshoot
+## 7. How to Monitor Logs & Troubleshoot
 
 1. Go to the **Actions** tab on GitHub:
    `https://github.com/mohsen2181/terraform-aws-projets/actions`
@@ -257,19 +277,23 @@ git push origin main
 4. Live output streams in real time. Expand any step to view CLI outputs:
    - Step 9: `Terraform Apply` stdout/stderr.
    - Step 10: DynamoDB catalog count and seeding logs.
-   - Step 11: S3 image sync progress.
+   - Step 11: S3 image sync progress (auto-downloading missing images).
    - Step 12: `aws-config.js` configuration and CloudFront invalidation ID.
 
 ---
 
-## 7. Verified Production Endpoints
+## 8. Verified Production Endpoints
 
 | Resource | Live Endpoint / Value |
 | :--- | :--- |
 | **Storefront (CloudFront CDN)** | **[https://mycloudhomelab.click](https://mycloudhomelab.click)** |
-| **API Gateway (HTTP v2)** | `https://rylu5a92dd.execute-api.us-east-1.amazonaws.com` |
-| **Catalog API** | `https://rylu5a92dd.execute-api.us-east-1.amazonaws.com/products` (100 products) |
+| **CloudFront Distribution ID** | `E1AGV3AGUR46Y6` |
+| **API Gateway (HTTP v2)** | `https://upa76sz002.execute-api.us-east-1.amazonaws.com` |
+| **Catalog API** | `https://upa76sz002.execute-api.us-east-1.amazonaws.com/products` (100 products) |
 | **Product Images** | `https://mycloudhomelab.click/images/products/prod-001.jpg` (HTTP 200 OK) |
+| **AWS Monthly Budget** | `ecommerce-monthly-budget` ($25.00 limit, alerts at $20.00 & $25.00) |
+| **CloudWatch Billing Alarm** | `ecommerce-billing-alarm-monthly` ($20.00 threshold) |
+| **ECS Capacity Provider** | `FARGATE_SPOT` (100% weight across all 4 services) |
 | **S3 Remote State** | `s3://ecommerce-tfstate-727742746869/dev/terraform.tfstate` |
 | **DynamoDB State Lock** | `ecommerce-tflocks` |
 | **GitHub Actions IAM Role** | `arn:aws:iam::727742746869:role/github-actions-ecommerce-role` |
